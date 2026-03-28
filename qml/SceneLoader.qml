@@ -1,133 +1,142 @@
 // SceneLoader.qml
-import QtQuick 2.15
-import QtQuick3D 1.15
-import QtQuick.XmlListModel 2.0   // for parsing the XML
-import "."                       // import the models defined above
+import QtQuick
+import QtQuick3D
+import QtQuick3D.Helpers
+import QtQuick3D.AssetUtils
+import QtQml.XmlListModel
+import QtQml.Models
+import "."
+import "views"
+import "models"
 
 Item {
     id: root
-    width: 800
-    height: 600
 
     // -----------------------------------------------------------------
     //  XML source – replace with the real path to your .sh3d file
     // -----------------------------------------------------------------
-    property url xmlSource: "file:///path/to/your/house.xml"
+    property url xmlSourceDir: "file:///path/to/your/house/dir/"
+    property url homeXmlSource: root.xmlSourceDir + "Home.xml"
 
-    // -----------------------------------------------------------------
-    // Populate the ListModels from the XML
-    // -----------------------------------------------------------------
-    XmlListModel {
-        id: xmlModel
-        source: root.xmlSource
-        query: "/home/*"   // we will filter per element below
+    HomeModel {
+        id: homeModel
+        source: root.homeXmlSource
+    }
+    WallModel {
+        id: wallModel
+        source: root.homeXmlSource
+    }
+    RoomModel {
+        id: roomModel
+        source: root.homeXmlSource
+    }
+    FurnitureModel {
+        id: furnitureModel
+        source: root.homeXmlSource
+    }
+    CameraModel {
+        id: cameraModel
+        source: root.homeXmlSource
+
+        onStatusChanged: if (status === XmlListModel.Ready && cameraModel.count>0) {
+                             var cam = cameraModel.get(0);
+                             mainCamera.position = vec3_Y_UP(cam.x, cam.y, cam.z);
+                             mainCamera.fieldOfView = cam.fieldOfView * 180 / Math.PI;
+                             mainCamera.eulerRotation = vec3_Y_UP(cam.yaw * 180 / Math.PI - 90, 0, 180 - cam.pitch * 180 / Math.PI);
+                         }
     }
 
-    // Helper: copy a node list into a ListModel
-    function fillModel(xmlQuery, targetModel, fields) {
-        var nodes = xmlModel.query(xmlQuery);
-        targetModel.clear();
-        for (var i = 0; i < nodes.length; ++i) {
-            var node = nodes[i];
-            var entry = {};
-            for (var f = 0; f < fields.length; ++f) {
-                var field = fields[f];
-                entry[field] = node.attribute(field);
-            }
-            targetModel.append(entry);
-        }
+    /* -----------------------------------------------------------------
+     *  Build the 3‑D scene from the populated models
+     *  *** note: SweetHome3D's view is Y-UP based (comes from Java3D).
+     *            So the easiest to match the visualization is to do the
+     *            same here too.
+     *  *** This means the drawing plan is actually the XZ plan.
+     * ----------------------------------------------------------------- */
+
+    function vec3_Y_UP(_x, _y, _z): vector3d {
+        return Qt.vector3d(_x, _z, _y);
     }
 
-    // -----------------------------------------------------------------
-    // Fill each model when the XML is loaded
-    // -----------------------------------------------------------------
-    Component.onCompleted: {
-        // Home (just for completeness)
-        fillModel("home", HomeModel, ["name", "version"]);
-
-        // Walls
-        fillModel("wall", WallModel,
-                  ["x1","y1","x2","y2","height","thickness"]);
-
-        // Rooms
-        fillModel("room", RoomModel,
-                  ["name","wallIds","floorColor","ceilingColor"]);
-
-        // Furniture
-        fillModel("furniture", FurnitureModel,
-                  ["name","x","y","z","angle","modelFile"]);
-
-        // Doors
-        fillModel("door", DoorModel,
-                  ["wallId","x","y","width","height"]);
-
-        // Windows
-        fillModel("window", WindowModel,
-                  ["wallId","x","y","width","height"]);
-
-        // Lights
-        fillModel("light", LightModel,
-                  ["type","x","y","z","intensity","color"]);
-
-        // Camera (optional)
-        fillModel("camera", CameraModel,
-                  ["x","y","z","rx","ry","rz"]);
-    }
-
-    // -----------------------------------------------------------------
-    //  Build the 3‑D scene from the populated models
-    // -----------------------------------------------------------------
     View3D {
+        id: mainView3D
         anchors.fill: parent
-        camera: Camera {
-            // If a saved camera exists, use it; otherwise default.
-            Component.onCompleted: {
-                if (CameraModel.count > 0) {
-                    var cam = CameraModel.get(0);
-                    position = Qt.vector3d(cam.x, cam.y, cam.z);
-                    rotation = Qt.vector3d(cam.rx, cam.ry, cam.rz);
-                }
-            }
+        environment: SceneEnvironment {
+            antialiasingMode: SceneEnvironment.MSAA
+            tonemapMode: SceneEnvironment.TonemapModeFilmic
+            backgroundMode: SceneEnvironment.Color
+            clearColor: "#6060A0"
+        }
+        camera: PerspectiveCamera {
+            id: mainCamera
+        }
+
+        DirectionalLight {
+            eulerRotation.x: -30
+            eulerRotation.y: -70
+        }
+
+        WasdController {
+            controlledObject: mainCamera
+        }
+
+        AxisHelper {
+            id: axisHelper
         }
 
         // ----- Walls ----------------------------------------------------
-        Repeater {
-            model: WallModel
-            delegate: Model {
-                // Simple rectangular prism for a wall
-                source: "#Cube"
-                materials: DefaultMaterial { diffuseColor: "#c0c0c0" }
+        Repeater3D {
+            model: wallModel
+            delegate: WallDelegate {
+                xStart: model.xStart
+                xEnd: model.xEnd
+                yStart: model.yStart
+                yEnd: model.yEnd
+                thickness: model.thickness
+                height: model.height
+                arcExtent: model.arcExtent
+            }
+        }
 
-                // Compute centre + orientation from the two end points
-                property real dx: x2 - x1
-                property real dy: y2 - y1
-                property real length: Math.sqrt(dx*dx + dy*dy)
-                property real angle: Math.atan2(dy, dx) * 180 / Math.PI
-
-                position: Qt.vector3d((x1 + x2)/2, (y1 + y2)/2, height/2)
-                scale: Qt.vector3d(length/1000, thickness/1000, height/1000)
-                eulerRotation: Qt.vector3d(0, 0, angle)
+        // ----- rooms (floor & ceiling)------------------------------------
+        Repeater3D {
+            model: roomModel
+            delegate: RoomDelegate {
+                floorVisible: model.floorVisibl
+                floorColor: model.floorColor
+                floorShininess: model.floorShinin
+                ceilingVisible: model.ceilingVisi
+                ceilingColor: model.ceilingColo
+                ceilingShininess: model.ceilingShin
+                ceilingFlat: model.ceilingFlat
+                roomPoints: roomModel.roomPoints
             }
         }
 
         // ----- Furniture ------------------------------------------------
-        Repeater {
-            model: FurnitureModel
-            delegate: Model {
-                source: modelFile   // expects a GLTF/OBJ file relative to the app
-                eulerRotation: Qt.vector3d(0, angle, 0)
-                position: Qt.vector3d(x, y, z)
-                // optional: scale, material overrides, etc.
+        Repeater3D {
+            model: furnitureModel
+            delegate: FurnitureDelegate {
+                furnitureSource: root.xmlSourceDir + (modelFile.includes(".") ? modelFile : (modelFile + ".obj"))
+
+                modelAngle: model.angle
+                modelX: model.x
+                modelY: model.y
+                modelHeight: model.height
+                modelWidth: model.width
+                modelDepth: model.depth
+                modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
             }
         }
 
+        /*
         // ----- Lights ---------------------------------------------------
         Repeater {
             model: LightModel
             delegate: Light {
-                type: (type === "point") ? Light.Point : (type === "spot") ? Light.Spot : Light.Directional
+                //type: (type === "point") ? Light.Point : (type === "spot") ? Light.Spot : Light.Directional
                 position: Qt.vector3d(x, y, z)
-                intensity: intensity
+                //intensity: intensity
                 color: color
             }
         }
@@ -138,7 +147,7 @@ Item {
         Repeater {
             model: DoorModel
             delegate: Model {
-                source: "#DoorGeometry"
+                source: "#Cube"
                 materials: DefaultMaterial { diffuseColor: "#8b4513" }
                 // Position relative to the owning wall (wallId is ignored here)
                 position: Qt.vector3d(x, y, height/2)
@@ -149,14 +158,12 @@ Item {
         Repeater {
             model: WindowModel
             delegate: Model {
-                source: "#WindowGeometry"
+                source: "#Cube"
                 materials: DefaultMaterial { diffuseColor: "#87cefa"; opacity: 0.5 }
                 position: Qt.vector3d(x, y, height/2)
                 scale: Qt.vector3d(width/1000, thickness/1000, height/1000)
             }
         }
-
-        Geometry { id: DoorGeometry; source: WallGeometry }
-        Geometry { id: WindowGeometry; source: WallGeometry }
+        */
     }
 }

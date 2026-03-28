@@ -1,6 +1,5 @@
 // main.qml
-import QtQuick 2.15
-import QtQuick.Window 2.15
+import QtQuick
 import "."               // import the qml folder
 
 Window {
@@ -13,6 +12,8 @@ Window {
     SceneLoader {
         anchors.fill: parent
         // Point to your actual SweetHome3D XML file
-        xmlSource: "file:///C:/Users/you/Documents/house.xml"
+//        xmlSourceDir: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/simple-home/"
+//        xmlSource: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/Appart_Home.xml"
+        xmlSourceDir: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/DessinAppartComePrecis_remodelage/"
     }
 }

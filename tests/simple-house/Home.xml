@@ -1,0 +1,39 @@
+<?xml version='1.0'?>
+<home version='7400' name='simple-house.sh3d' camera='topCamera' wallHeight='250.0'>
+  <property name='com.eteks.sweethome3d.SweetHome3D.CatalogPaneDividerLocation' value='775'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.ColumnWidths' value='180,152,193,155,136'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.FrameHeight' value='1824'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.FrameWidth' value='2117'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.FrameX' value='308'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.FrameY' value='152'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.MainPaneDividerLocation' value='821'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.PlanPaneDividerLocation' value='823'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.PlanViewportX' value='0'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.PlanViewportY' value='0'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.ScreenHeight' value='2110'/>
+  <property name='com.eteks.sweethome3d.SweetHome3D.ScreenWidth' value='3840'/>
+  <furnitureVisibleProperty name='NAME'/>
+  <furnitureVisibleProperty name='WIDTH'/>
+  <furnitureVisibleProperty name='DEPTH'/>
+  <furnitureVisibleProperty name='HEIGHT'/>
+  <furnitureVisibleProperty name='VISIBLE'/>
+  <environment groundColor='00A8A8A8' skyColor='00CCE4FC' lightColor='00D0D0D0' ceillingLightColor='00D0D0D0' photoWidth='400' photoHeight='300' photoAspectRatio='VIEW_3D_RATIO' photoQuality='0' videoWidth='320' videoAspectRatio='RATIO_4_3' videoQuality='0' videoFrameRate='25'/>
+  <compass x='-100.0' y='50.0' diameter='100.0' northDirection='0.0' longitude='0.0' latitude='0.8982628' timeZone='GMT+01:00'/>
+  <observerCamera attribute='observerCamera' lens='PINHOLE' x='50.0' y='50.0' z='170.0' yaw='5.4977875' pitch='0.19634955' fieldOfView='1.0995575' time='1774353600000'/>
+  <camera attribute='topCamera' lens='PINHOLE' x='788.94354' y='507.26703' z='1465.1521' yaw='2.4615908' pitch='1.1703979' fieldOfView='1.0995575' time='1774353600000'/>
+  <pieceOfFurniture id='pieceOfFurniture-d71aa1e4-67f7-4382-8bb5-ca58c0915e2e' catalogId='Scopia#4x4' name='4x4' creator='Scopia' model='1/4x4.obj' icon='0' x='356.7' y='164.36017' angle='4.712389' width='186.40001' depth='381.6' height='194.3' modelSize='426895' license='CC-BY'/>
+  <wall id='wall-16474cc3-8b11-4640-8c20-132a60317f42' wallAtStart='wall-91a33a97-273d-46d3-a17d-64d4006c818f' wallAtEnd='wall-31bbf92a-0e93-45d7-8a2b-c6c0443d5a2a' xStart='99.5' yStart='300.56018' xEnd='99.5' yEnd='-0.43981934' height='250.0' thickness='7.0' pattern='hatchUp'/>
+  <wall id='wall-31bbf92a-0e93-45d7-8a2b-c6c0443d5a2a' wallAtStart='wall-16474cc3-8b11-4640-8c20-132a60317f42' wallAtEnd='wall-00eda5ea-2346-4b40-9ad7-77e59879981f' xStart='99.5' yStart='-0.43981934' xEnd='599.5' yEnd='-0.43981934' height='250.0' thickness='7.0' pattern='hatchUp'/>
+  <wall id='wall-00eda5ea-2346-4b40-9ad7-77e59879981f' wallAtStart='wall-31bbf92a-0e93-45d7-8a2b-c6c0443d5a2a' wallAtEnd='wall-f4e1e0da-de20-491e-8c40-1f8bfc848d91' xStart='599.5' yStart='-0.43981934' xEnd='599.5' yEnd='102.56018' height='250.0' thickness='7.0' pattern='hatchUp'/>
+  <wall id='wall-f4e1e0da-de20-491e-8c40-1f8bfc848d91' wallAtStart='wall-00eda5ea-2346-4b40-9ad7-77e59879981f' wallAtEnd='wall-a8d3f366-2ba2-42de-b997-2ea74ae77f56' xStart='599.5' yStart='102.56018' xEnd='698.5' yEnd='102.56018' height='250.0' thickness='7.0' pattern='hatchUp'/>
+  <wall id='wall-a8d3f366-2ba2-42de-b997-2ea74ae77f56' wallAtStart='wall-f4e1e0da-de20-491e-8c40-1f8bfc848d91' wallAtEnd='wall-91a33a97-273d-46d3-a17d-64d4006c818f' xStart='698.5' yStart='102.56018' xEnd='698.5' yEnd='300.56018' height='250.0' thickness='7.0' pattern='hatchUp'/>
+  <wall id='wall-91a33a97-273d-46d3-a17d-64d4006c818f' wallAtStart='wall-a8d3f366-2ba2-42de-b997-2ea74ae77f56' wallAtEnd='wall-16474cc3-8b11-4640-8c20-132a60317f42' xStart='698.5' yStart='300.56018' xEnd='99.5' yEnd='300.56018' height='250.0' thickness='7.0' pattern='hatchUp'/>
+  <room id='room-1399a09a-67f0-47f2-8903-72a979b13342' areaVisible='true' ceilingFlat='true'>
+    <point x='596.0' y='3.0601807'/>
+    <point x='596.0' y='106.06018'/>
+    <point x='695.0' y='106.06018'/>
+    <point x='695.0' y='297.06018'/>
+    <point x='103.0' y='297.06018'/>
+    <point x='103.0' y='3.0601807'/>
+  </room>
+</home>
