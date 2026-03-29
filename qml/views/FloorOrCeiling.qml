@@ -2,49 +2,58 @@ import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
 
+import "../js/earcut.js" as EarCut
+
 Model {
     id: floorOrCeilingModel
     property real thickness: 10
     property variant roomPoints
     property int nbPoints: roomPoints ? roomPoints.length : 0
 
+    materials: [ DefaultMaterial { diffuseColor: "white" } ]
+
     geometry: ProceduralMesh {
+        id: mainMesh
         property bounds meshBounds;
         property var meshArrays: generateRoomSurface(roomPoints, thickness)
         positions: meshArrays.verts
         normals: meshArrays.normals
         uv0s: meshArrays.uvs
         indexes: meshArrays.indices
-        subsets: [ ProceduralMeshSubset { count: 2*3; offset: 0 },  /* left */
-            ProceduralMeshSubset { count: 2*3; offset: 2*3 },  /* right */
-            ProceduralMeshSubset { count: floorOrCeilingModel.nbPoints*2*3; offset: 4*3 },  /* above */
-            ProceduralMeshSubset { count: floorOrCeilingModel.nbPoints*2*3; offset: 4*3+floorOrCeilingModel.nbPoints*2*3 },  /* below */
-            ProceduralMeshSubset { count: floorOrCeilingModel.nbPoints*2*3; offset: 4*3+floorOrCeilingModel.nbPoints*2*2*3 },  /* inside */
-            ProceduralMeshSubset { count: floorOrCeilingModel.nbPoints*2*3; offset: 4*3+floorOrCeilingModel.nbPoints*2*3*3 }   /* outside */
+        subsets: [
+            ProceduralMeshSubset { count: mainMesh.meshArrays.nbEarcutIndices; offset: 0 },  /* above */
+            ProceduralMeshSubset { count: mainMesh.meshArrays.nbEarcutIndices; offset: mainMesh.meshArrays.nbEarcutIndices },  /* below */
+            ProceduralMeshSubset { count: floorOrCeilingModel.nbPoints*2*3; offset: mainMesh.meshArrays.nbEarcutIndices*2 }  /* whole border */
         ]
 
-        function generateArcWall(roomPoints: variant, thickness: real): variant {
+        function generateRoomSurface(roomPoints: variant, thickness: real): variant {
             let verts = []
             let normals = []
             let uvs = []
             let indices = []
             let i = 0;
 
-            meshBounds.maximum = Qt.vector3d(0,0,thickness);;
-            meshBounds.minimum = Qt.vector3d(0,0,0);
+            if (!roomPoints || roomPoints.length < 3 )
+                return { verts: verts, normals: normals, uvs: uvs, indices: indices }
+
+            let maxExtent = Qt.vector2d(0,0);
+            let minExtent = Qt.vector2d(0,0);
 
             for (i = 0; i < roomPoints.length; ++i) {
-                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, 0));
-                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, thickness));
+                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, -thickness)); //below
+                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, 0));          //above
 
-                meshBounds.maximum.x = Math.max(meshBounds.maximum.x, roomPoints[i].x)
-                meshBounds.maximum.y = Math.max(meshBounds.maximum.y, roomPoints[i].x)
-                meshBounds.minimum.x = Math.min(meshBounds.minimum.x, roomPoints[i].x)
-                meshBounds.minimum.y = Math.min(meshBounds.minimum.y, roomPoints[i].x)
+                normals.push(vec3_Y_UP(0, 0, -1));
+                normals.push(vec3_Y_UP(0, 0, 1));
+
+                maxExtent.x = Math.max(maxExtent.x, roomPoints[i].x)
+                maxExtent.y = Math.max(maxExtent.y, roomPoints[i].x)
+                minExtent.x = Math.min(minExtent.x, roomPoints[i].x)
+                minExtent.y = Math.min(minExtent.y, roomPoints[i].x)
             }
 
-            let widthSurface  = meshBounds.maximum.x - meshBounds.minimum.x;
-            let heightSurface = meshBounds.maximum.y - meshBounds.minimum.y;
+            let widthSurface  = maxExtent.x - minExtent.x;
+            let heightSurface = maxExtent.y - minExtent.y;
 
             for (i = 0; i < roomPoints.length; ++i) {
                 // U and V will correspond to the relative abs and ord, normalized to 1
@@ -52,36 +61,30 @@ Model {
                 uvs.push(Qt.vector2d((roomPoints[i].x-meshBounds.minimum.x) / widthSurface, (roomPoints[i].y-meshBounds.minimum.y) / heightSurface));
             }
 
-            // Create the indices. We want 6 sub meshes: left side, right side, above, below, interior, exterior
-            // Adjust order to be counter-clockwise
-            /* left */
-            indices.push(0, 1, 2);
-            indices.push(2, 3, 0);
-            /* right */
-            indices.push(nbPoints*4 + 1, nbPoints*4 + 0, nbPoints*4 + 3);
-            indices.push(nbPoints*4 + 3, nbPoints*4 + 2, nbPoints*4 + 1);
-            /* above */
-            for (i = 0; i < nbPoints; ++i) {
-                indices.push(i*4 + 1, (i+1)*4 + 1, (i+1)*4 + 2);
-                indices.push((i+1)*4 + 2, i*4 + 2, i*4 + 1);
-            }
-            /* below */
-            for (i = 0; i < nbPoints; ++i) {
-                indices.push((i+1)*4 + 0, i*4 + 0, (i+1)*4 + 3);
-                indices.push(i*4 + 3, (i+1)*4 + 3, i*4 + 0);
-            }
-            /* inside */
-            for (i = 0; i < nbPoints; ++i) {
-                indices.push(i*4 + 0, (i+1)*4 + 0, (i+1)*4 + 1);
-                indices.push((i+1)*4 + 1, i*4 + 1, i*4 + 0);
-            }
-            /* outside */
-            for (i = 0; i < nbPoints; ++i) {
-                indices.push(i*4 + 3, i*4 + 2, (i+1)*4 + 3);
-                indices.push((i+1)*4 + 2, (i+1)*4 + 3, i*4 + 2);
-            }
+            // Create a mesh for the main surface
+            let flatRoomPointsArray = roomPoints.reduce((accArray, roomPoint) => {
+                                                               accArray.push(Number(roomPoint.x), Number(roomPoint.y));
+                                                               return accArray;
+                                                           }, [])
+            const earcutIndices = EarCut.earcut(flatRoomPointsArray);
 
-            return { verts: verts, normals: normals, uvs: uvs, indices: indices }
+            // Create the indices. We want 3 sub meshes: above, below, and whole border
+            // Adjust order to be counter-clockwise
+            /* below: earcut indices should point to the even vertices and the triangle should be opposite */
+            indices.push(...earcutIndices.map((idx) => idx*2)); // beware: reverse() modifies the array itself !
+            /* above: earcut indices should point to the odd vertices */
+            indices.push(...earcutIndices.reverse().map((idx) => idx*2+1));
+            /* whole border */
+            for (i = 0; i < roomPoints.length-1; ++i) {
+                indices.push(i*2 + 1, i*2, (i+1)*2);
+                indices.push((i+1)*2, (i+1)*2 + 1, i*2 + 1);
+            }
+            // last point, wrap up border
+            // nb: i equals roomPoints.length-1 because of the for loop
+            indices.push(i*2 + 1, i*2, 0);
+            indices.push(0, 0 + 1, i*2 + 1);
+
+            return { verts: verts, normals: normals, uvs: uvs, indices: indices, nbEarcutIndices: earcutIndices.length }
         }
     }
 }

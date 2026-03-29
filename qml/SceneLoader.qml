@@ -18,27 +18,40 @@ Item {
     property url xmlSourceDir: "file:///path/to/your/house/dir/"
     property url homeXmlSource: root.xmlSourceDir + "Home.xml"
 
+    Sh3dXmlObject {
+        id: sh3dXmlObject
+        xmlModelFile: root.homeXmlSource
+    }
+    Sh3dXmlModel {
+        xmlReader: sh3dXmlObject
+        query: "/home/room[@id='room-4053d649-1211-4918-9d66-edad994a1cc2']/point"
+    }
+
     HomeModel {
         id: homeModel
-        source: root.homeXmlSource
+        xmlReader: sh3dXmlObject
     }
     WallModel {
         id: wallModel
-        source: root.homeXmlSource
+        xmlReader: sh3dXmlObject
     }
     RoomModel {
         id: roomModel
-        source: root.homeXmlSource
+        xmlReader: sh3dXmlObject
     }
     FurnitureModel {
         id: furnitureModel
-        source: root.homeXmlSource
+        xmlReader: sh3dXmlObject
+    }
+    LightModel {
+        id: lightModel
+        xmlReader: sh3dXmlObject
     }
     CameraModel {
         id: cameraModel
-        source: root.homeXmlSource
+        xmlReader: sh3dXmlObject
 
-        onStatusChanged: if (status === XmlListModel.Ready && cameraModel.count>0) {
+        onLoadModelCompleted: if (cameraModel.count>0) {
                              var cam = cameraModel.get(0);
                              mainCamera.position = vec3_Y_UP(cam.x, cam.y, cam.z);
                              mainCamera.fieldOfView = cam.fieldOfView * 180 / Math.PI;
@@ -70,12 +83,12 @@ Item {
         camera: PerspectiveCamera {
             id: mainCamera
         }
-
+/*
         DirectionalLight {
             eulerRotation.x: -30
             eulerRotation.y: -70
         }
-
+*/
         WasdController {
             controlledObject: mainCamera
         }
@@ -102,14 +115,22 @@ Item {
         Repeater3D {
             model: roomModel
             delegate: RoomDelegate {
-                floorVisible: model.floorVisibl
+                roomPointsModel: RoomPointsModel {
+                    xmlReader: sh3dXmlObject
+                    queryRoomId: model.id
+
+                    Component.onCompleted: loadElementsFromDocumentWithQuery()
+                }
+
+                roomId: model.id
+                floorVisible: model.floorVisible || model.areaVisible
                 floorColor: model.floorColor
-                floorShininess: model.floorShinin
-                ceilingVisible: model.ceilingVisi
-                ceilingColor: model.ceilingColo
-                ceilingShininess: model.ceilingShin
+                floorShininess: model.floorShininess
+                ceilingVisible: model.ceilingVisible
+                ceilingColor: model.ceilingColor
+                ceilingShininess: model.ceilingShininess
                 ceilingFlat: model.ceilingFlat
-                roomPoints: roomModel.roomPoints
+                roomPoints: roomModel.points
             }
         }
 
@@ -117,7 +138,7 @@ Item {
         Repeater3D {
             model: furnitureModel
             delegate: FurnitureDelegate {
-                furnitureSource: root.xmlSourceDir + (modelFile.includes(".") ? modelFile : (modelFile + ".obj"))
+                furnitureSource: root.xmlSourceDir + (model.modelFile.includes(".") ? model.modelFile : (model.modelFile + ".obj"))
 
                 modelAngle: model.angle
                 modelX: model.x
@@ -129,18 +150,32 @@ Item {
             }
         }
 
-        /*
-        // ----- Lights ---------------------------------------------------
-        Repeater {
-            model: LightModel
-            delegate: Light {
-                //type: (type === "point") ? Light.Point : (type === "spot") ? Light.Spot : Light.Directional
-                position: Qt.vector3d(x, y, z)
-                //intensity: intensity
-                color: color
-            }
-        }
 
+        // ----- Lights ---------------------------------------------------
+        Repeater3D {
+            model: lightModel
+            delegate: LightDelegate {
+                    id: lightDelegate
+                    furnitureSource: root.xmlSourceDir + (model.modelFile.includes(".") ? model.modelFile : (model.modelFile + ".obj"))
+
+                    modelAngle: 0
+                    modelX: model.x
+                    modelY: model.y
+                    modelHeight: model.height
+                    modelWidth: model.width
+                    modelDepth: model.depth
+                    modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
+
+                    lightPower: model.power
+                    lightSourceModel: LightSourceModel {
+                        xmlReader: sh3dXmlObject
+                        queryLightId: model.id
+
+                        Component.onCompleted: loadElementsFromDocumentWithQuery()
+                    }
+                }
+        }
+/*
         // ----- Doors & Windows (cutouts) --------------------------------
         // For simplicity we just render them as thin boxes; a real app would
         // subtract them from the wall geometry using a Boolean operation.

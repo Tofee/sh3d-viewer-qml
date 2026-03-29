@@ -22,12 +22,12 @@ Node {
 
             property vector3d posCenter: bounds.minimum.plus(bounds.maximum).times(0.5)
             property vector3d furnitureSize: bounds.maximum.minus(bounds.minimum)
-
+/*
             Texture {
                 id: myQtTexture
                 source: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/DessinAppartComePrecis_remodelage/123/map-and-flame.jpg"
             }
-
+*/
             onStatusChanged: {
                 if (status == RuntimeLoader.Success) {
                     if (modelFile === "83/model.dae") {

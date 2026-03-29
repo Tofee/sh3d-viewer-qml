@@ -14,6 +14,7 @@ Window {
         // Point to your actual SweetHome3D XML file
 //        xmlSourceDir: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/simple-home/"
 //        xmlSource: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/Appart_Home.xml"
-        xmlSourceDir: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/DessinAppartComePrecis_remodelage/"
+//        xmlSourceDir: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/DessinAppartComePrecis_remodelage/"
+        xmlSourceDir: "file:///home/chris/dev/projects/sh3d-viewer-qml/tests/Plan_appart_latest_from_plan/"
     }
 }

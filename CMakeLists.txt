@@ -16,23 +16,22 @@ qt_add_qml_module(appsh3d_viewer_qml
     URI sh3d_viewer_qml
     QML_FILES
         qml/Main.qml
-
-
-
-
-
-
         qml/SceneLoader.qml
+        qml/views/WallDelegate.qml
+        qml/models/RoomModel.qml
+        qml/models/HomeModel.qml
+        qml/models/CameraModel.qml qml/models/DoorModel.qml qml/models/FurnitureModel.qml qml/models/LightModel.qml qml/models/RoomModel.qml qml/models/WindowModel.qml
+        qml/models/WallModel.qml
+        qml/views/FurnitureDelegate.qml
+        qml/views/RoomDelegate.qml
+        qml/views/FloorOrCeiling.qml
 
-
-        QML_FILES
-        QML_FILES qml/views/WallDelegate.qml
-        QML_FILES qml/models/RoomModel.qml
-        QML_FILES qml/models/HomeModel.qml
-        QML_FILES qml/models/CameraModel.qml qml/models/DoorModel.qml qml/models/FurnitureModel.qml qml/models/LightModel.qml qml/models/RoomModel.qml qml/models/WindowModel.qml
-        QML_FILES qml/models/WallModel.qml
-        QML_FILES qml/views/FurnitureDelegate.qml
-        QML_FILES qml/views/RoomDelegate.qml
+    RESOURCES qml/js/earcut.js
+    QML_FILES qml/models/RoomPointsModel.qml
+    SOURCES
+    QML_FILES qml/models/Sh3dXmlModel.qml qml/models/Sh3dXmlObject.qml
+    QML_FILES qml/models/LightSourceModel.qml
+    QML_FILES qml/views/LightDelegate.qml
 
     # SOURCES models/BackgroundImage.h models/Camera.h models/Compass.h models/Environment.h models/FurnitureVisibleProperty.h models/Home.cpp models/Home.h models/Print.h models/PrintedLevel.h models/Property.h
 )
