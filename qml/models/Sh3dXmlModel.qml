@@ -6,6 +6,7 @@ import "."
 ListModel {
     id: sh3DXmlListModel
     property string query;
+    property string skipNode: "furnitureGroup";
     property variant defaultInitValues;
     signal loadModelCompleted;
 
@@ -14,34 +15,30 @@ ListModel {
 
     function loadElementsFromDocumentWithQuery() {
         // find the query in the xmlDocument
-        let foundLeaf;
+        let i=0, j=0;
 
-        console.log(this+" query "+query);
+        //console.log(this+" query "+query);
 
         let queryPathElements = query.split('/');
-        let currentElement = xmlReader.xmlDocument;
-        for (let i=1; i<queryPathElements.length && currentElement; ++i) {
-            currentElement = _findMatchingChild(currentElement, queryPathElements[i])
-            if (i == queryPathElements.length-1) foundLeaf = currentElement;
+        let toProcess = [ xmlReader.xmlDocument ];
+        for (i=1; i<queryPathElements.length && toProcess.length > 0; ++i) {
+            let childrenToProcess = []
+            for (j=0; j<toProcess.length; ++j) {
+                childrenToProcess.push(... _findMatchingChildren(toProcess[j], queryPathElements[i]))
+            }
+            toProcess = childrenToProcess;
         }
 
         // we found no match, just leave the model empty.
-        if (!foundLeaf) return;
-
-        let foundLeafNodeName = foundLeaf.nodeName;
-        while (foundLeaf) {
-            // for each of foundChild siblings of name type (including itself), add an element to the ListModel
-            // with all the attributes' values
-            if (foundLeaf.nodeName === foundLeafNodeName) {
-                _addFoundChildToListModel(foundLeaf);
-            }
-            foundLeaf = foundLeaf.nextSibling;
+        for (j=0; j<toProcess.length; ++j) {
+            _addFoundChildToListModel(toProcess[j]);
         }
 
         sh3DXmlListModel.loadModelCompleted();
     }
     // Returns the child of xmlElt that matches childQuery
-    function _findMatchingChild(xmlElt: variant, childQuery: string): variant {
+    function _findMatchingChildren(xmlElt: variant, childQuery: string): variant {
+        let matchingChildren = [];
         let children = (!!xmlElt.documentElement) ? [ xmlElt.documentElement ] : xmlElt.childNodes;
 
         let childQueryRegEx = /(\w+)\[@(\w+)=['"]([^'"]+)['"]\]/
@@ -50,23 +47,25 @@ ListModel {
 
         for (let i=0; i<children.length; ++i) {
             let child = children[i];
-            let isMaching = false;
             if (child.nodeName === childQueryParams[1]) {
                 if (childQueryParams.length === 4) {
                     for (let i_attr=0; i_attr<child.attributes.length; ++i_attr) {
                         if (child.attributes[i_attr].name === childQueryParams[2] && child.attributes[i_attr].value === childQueryParams[3]) {
-                            isMaching = true;
+                            matchingChildren.push(child);
                             break;
                         }
                     }
                 }
                 else {
-                    isMaching = true;
+                    matchingChildren.push(child);
                 }
-                if (isMaching) return child;
+            }
+            else if(skipNode && skipNode === child.nodeName) {
+                // skip this node and look in its children instead
+                matchingChildren.push(... _findMatchingChildren(child, childQuery));
             }
         }
-        return null;
+        return matchingChildren;
     }
     function _addFoundChildToListModel(xmlElt: variant) {
         let o = {};

@@ -76,19 +76,20 @@ Item {
         anchors.fill: parent
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
+            backgroundMode: SceneEnvironment.SkyBox
+            lightProbe: Texture { source: "../resources/little_paris_eiffel_tower_2k.hdr" }
             tonemapMode: SceneEnvironment.TonemapModeFilmic
-            backgroundMode: SceneEnvironment.Color
             clearColor: "#6060A0"
         }
         camera: PerspectiveCamera {
             id: mainCamera
         }
-/*
+
         DirectionalLight {
             eulerRotation.x: -30
             eulerRotation.y: -70
         }
-*/
+
         WasdController {
             controlledObject: mainCamera
         }
