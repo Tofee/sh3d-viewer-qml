@@ -15,8 +15,10 @@ int main(int argc, char *argv[])
         &app,
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
+    engine.setInitialProperties({
+        { "xmlSourceDir", QUrl::fromLocalFile(app.arguments().at(1)) }
+    });
     engine.loadFromModule("sh3d_viewer_qml", "Main");
-
 
     return QCoreApplication::exec();
 }
