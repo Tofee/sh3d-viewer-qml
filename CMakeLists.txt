@@ -33,6 +33,11 @@ qt_add_qml_module(appsh3d_viewer_qml
     QML_FILES qml/models/Sh3dXmlModel.qml qml/models/Sh3dXmlObject.qml
     QML_FILES qml/models/LightSourceModel.qml
     QML_FILES qml/views/LightDelegate.qml
+    RESOURCES resources/lake_pier_1k.hdr
+    RESOURCES resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+    RESOURCES resources/OpenfootageNET_Paris_MenilmontonDAY_low.hdr
+    RESOURCES resources/little_paris_eiffel_tower_1k.hdr
+    RESOURCES resources/little_paris_eiffel_tower_2k.hdr
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
