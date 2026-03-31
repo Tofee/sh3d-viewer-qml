@@ -22,10 +22,6 @@ Item {
         id: sh3dXmlObject
         xmlModelFile: root.homeXmlSource
     }
-    Sh3dXmlModel {
-        xmlReader: sh3dXmlObject
-        query: "/home/room[@id='room-4053d649-1211-4918-9d66-edad994a1cc2']/point"
-    }
 
     HomeModel {
         id: homeModel
