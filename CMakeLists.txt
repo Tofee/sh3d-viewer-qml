@@ -10,6 +10,7 @@ qt_standard_project_setup(REQUIRES 6.10)
 
 qt_add_executable(appsh3d_viewer_qml
     src/main.cpp
+    src/sh3dasseturlhandler.h src/sh3dasseturlhandler.cpp
 )
 
 qt_add_qml_module(appsh3d_viewer_qml
@@ -32,8 +33,6 @@ qt_add_qml_module(appsh3d_viewer_qml
     QML_FILES qml/models/Sh3dXmlModel.qml qml/models/Sh3dXmlObject.qml
     QML_FILES qml/models/LightSourceModel.qml
     QML_FILES qml/views/LightDelegate.qml
-
-    # SOURCES models/BackgroundImage.h models/Camera.h models/Compass.h models/Environment.h models/FurnitureVisibleProperty.h models/Home.cpp models/Home.h models/Print.h models/PrintedLevel.h models/Property.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -48,7 +47,7 @@ set_target_properties(appsh3d_viewer_qml PROPERTIES
 )
 
 target_link_libraries(appsh3d_viewer_qml
-    PRIVATE Qt6::Quick
+    PRIVATE Qt6::Quick Qt6::Quick3D
 )
 
 install(TARGETS appsh3d_viewer_qml
