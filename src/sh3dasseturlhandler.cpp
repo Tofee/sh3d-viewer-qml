@@ -10,7 +10,7 @@ QUrl SH3DAssetUrlHandler::intercept(const QUrl& path, QQmlAbstractUrlInterceptor
 
     auto scheme = path.scheme();
     if (scheme == assetScheme) {
-        QFileInfo fi("sh3d:" + path.toString().mid(1));
+        QFileInfo fi("sh3d:" + path.toString().mid(5));
         if (fi.exists()) {
             if (fi.filePath().startsWith(":/")) {
                 // we need to deal with files in the resources by adding the url scheme for them

@@ -5,7 +5,7 @@ import QtQuick3D.AssetUtils
 
 Node {
     id: rootNode
-    property alias furnitureSource: furnitureLoader.source
+    property url furnitureSource
     property real modelAngle
     property real modelX
     property real modelY
@@ -19,6 +19,7 @@ Node {
         RuntimeLoader {
             id: furnitureLoader
             eulerRotation: Qt.vector3d(0,0,0)
+            source: rootNode.furnitureSource
 
             property vector3d posCenter: bounds.minimum.plus(bounds.maximum).times(0.5)
             property vector3d furnitureSize: bounds.maximum.minus(bounds.minimum)
@@ -30,7 +31,7 @@ Node {
 */
             onStatusChanged: {
                 if (status == RuntimeLoader.Success) {
-                    if (modelFile === "83/model.dae") {
+                    if (furnitureLoader.source === "qrc:///sh3d/83/model.dae") {
                         // this is a DAE model, let's see what it holds
                         var lastChild = children[children.length-1];
                         // lastChild holds the materials, then the Model
@@ -48,7 +49,7 @@ Node {
                     }
                 }
                 else if (status == RuntimeLoader.Error) {
-                    console.log("Furniture "+modelFile+" status: "+errorString);
+                    console.log("Furniture "+furnitureSource+" status: "+errorString);
                 }
             }
         }

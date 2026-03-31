@@ -1,0 +1,94 @@
+#include "Sh3dHomeModel.h"
+
+#include <QByteArray>
+#include <QDomDocument>
+#include <QVariantList>
+#include <QRegularExpression>
+
+Sh3dHomeModel::Sh3dHomeModel(QObject *parent)
+    :QObject{parent}
+{
+}
+
+void Sh3dHomeModel::loadHomeXmlContent(const QByteArray &homeXmlContent)
+{
+    _homeXmlDoc.setContent(homeXmlContent);
+}
+
+// Returns the child of xmlElt that matches childQuery
+QList<QDomElement> _findMatchingChildren(const QDomElement &xmlElt, const QString &childQuery, const QString &skipNode) {
+    QList<QDomElement> matchingChildren;
+
+    // First, let's handle the special case of the root "home" node
+    if (childQuery == "home") {
+        matchingChildren.append(xmlElt);
+        return matchingChildren;
+    }
+
+    QDomNodeList children = xmlElt.childNodes();
+
+    QRegularExpression childQueryRegEx(R"((\w+)\[@(\w+)=['"]([^'"]+)['"]\])");
+    QRegularExpressionMatch childQueryParams = childQueryRegEx.match(childQuery);
+    QString nodeTagToMatch, nodeAttrToMatch, nodeAttrValueToMatch ;
+    if (!childQueryParams.hasMatch()) {
+        nodeTagToMatch = childQuery;
+    } else {
+        nodeTagToMatch = childQueryParams.captured(0);
+        nodeAttrToMatch = childQueryParams.captured(1);
+        nodeAttrValueToMatch = childQueryParams.captured(2);
+    }
+
+    for (const QDomNode &child: children) {
+        QDomElement childElt = child.toElement();
+        if (childElt.isNull()) continue;
+        if (childElt.nodeName() == nodeTagToMatch) {
+            if (!nodeAttrToMatch.isNull()) {
+                if (childElt.attribute(nodeAttrToMatch) == nodeAttrValueToMatch) {
+                    matchingChildren.append(childElt);
+                    break;
+                }
+            }
+            else {
+                matchingChildren.append(childElt);
+            }
+        }
+        else if(skipNode == childElt.nodeName()) {
+            // skip this node and look in its children instead
+            matchingChildren.append(_findMatchingChildren(childElt, childQuery, skipNode));
+        }
+    }
+    return matchingChildren;
+}
+
+QList<QVariant> Sh3dHomeModel::runQuery(const QString &query, const QString &skipNode)
+{
+    QList<QVariant> results;
+
+    // find the query in the xmlDocument
+    qsizetype i=0, j=0;
+
+    //console.log(this+" query "+query);
+
+    QStringList queryPathElements = query.split('/');
+    QList<QDomElement> toProcess; toProcess.append(_homeXmlDoc.documentElement());
+    for (i=1; i<queryPathElements.length() && toProcess.length() > 0; ++i) {
+        QList<QDomElement> childrenToProcess;
+        for (j=0; j<toProcess.length(); ++j) {
+            childrenToProcess.append(_findMatchingChildren(toProcess[j], queryPathElements[i], skipNode));
+        }
+        toProcess = childrenToProcess;
+    }
+
+    // add matched elements to the final list
+    for (const QDomElement& elt: toProcess) {
+        QMap<QString, QVariant> elementAttrMap;
+        QDomNamedNodeMap eltAttributes = elt.attributes();
+        for (i=0; i<eltAttributes.length(); ++i) {
+            elementAttrMap[eltAttributes.item(i).nodeName()] = eltAttributes.item(i).nodeValue();
+        }
+        results.append(elementAttrMap);
+    }
+
+    return results;
+}
+

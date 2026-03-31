@@ -15,37 +15,26 @@ Item {
     // -----------------------------------------------------------------
     //  XML source – replace with the real path to your .sh3d file
     // -----------------------------------------------------------------
-    property url xmlSourceDir: "file:///path/to/your/house/dir/"
+    property url xmlSourceDir: ":/sh3d/"
     property url homeXmlSource: root.xmlSourceDir + "Home.xml"
-
-    Sh3dXmlObject {
-        id: sh3dXmlObject
-        xmlModelFile: root.homeXmlSource
-    }
 
     HomeModel {
         id: homeModel
-        xmlReader: sh3dXmlObject
     }
     WallModel {
         id: wallModel
-        xmlReader: sh3dXmlObject
     }
     RoomModel {
         id: roomModel
-        xmlReader: sh3dXmlObject
     }
     FurnitureModel {
         id: furnitureModel
-        xmlReader: sh3dXmlObject
     }
     LightModel {
         id: lightModel
-        xmlReader: sh3dXmlObject
     }
     CameraModel {
         id: cameraModel
-        xmlReader: sh3dXmlObject
 
         onLoadModelCompleted: if (cameraModel.count>0) {
                              var cam = cameraModel.get(0);
@@ -113,7 +102,6 @@ Item {
             model: roomModel
             delegate: RoomDelegate {
                 roomPointsModel: RoomPointsModel {
-                    xmlReader: sh3dXmlObject
                     queryRoomId: model.id
 
                     Component.onCompleted: loadElementsFromDocumentWithQuery()
@@ -135,7 +123,7 @@ Item {
         Repeater3D {
             model: furnitureModel
             delegate: FurnitureDelegate {
-                furnitureSource: root.xmlSourceDir + (model.modelFile.includes(".") ? model.modelFile : (model.modelFile + ".obj"))
+                furnitureSource: "qrc:///sh3d/"+model.modelFile
 
                 modelAngle: model.angle
                 modelX: model.x
@@ -165,7 +153,6 @@ Item {
 
                     lightPower: model.power
                     lightSourceModel: LightSourceModel {
-                        xmlReader: sh3dXmlObject
                         queryLightId: model.id
 
                         Component.onCompleted: loadElementsFromDocumentWithQuery()
