@@ -119,6 +119,13 @@ Item {
             delegate: FurnitureDelegate {
                 furnitureSource: "sh3d:/"+model.modelFile
 
+                materialModel: MaterialModel {
+                    queryId: model.id
+                    parentTag: "pieceOfFurniture"
+
+                    Component.onCompleted: loadElementsFromDocumentWithQuery()
+                }
+
                 modelAngle: model.angle
                 modelX: model.x
                 modelY: model.y
@@ -136,6 +143,13 @@ Item {
             delegate: LightDelegate {
                     id: lightDelegate
                     furnitureSource: "sh3d:/"+model.modelFile
+
+                    materialModel: MaterialModel {
+                        queryId: model.id
+                        parentTag: "light"
+
+                        Component.onCompleted: loadElementsFromDocumentWithQuery()
+                    }
 
                     modelAngle: 0
                     modelX: model.x

@@ -2,7 +2,11 @@
 #include <QQmlApplicationEngine>
 #include <QDomDocument>
 #include <QFile>
+#include <QDirIterator>
 #include <QString>
+#include <QStringList>
+#include <QTextStream>
+#include <QRegularExpression>
 #if 0
 #include <QMap>
 #include <QResource>
@@ -18,9 +22,6 @@
 
 int main(int argc, char *argv[])
 {
-    // needed to parse the SH3D xml file
-    qputenv("QML_XHR_ALLOW_FILE_READ", "1");
-
     QGuiApplication app(argc, argv);
 
     if (app.arguments().length() < 2) {
@@ -56,9 +57,84 @@ int main(int argc, char *argv[])
     }
 #else
     QTemporaryDir tmpAssetsDir;
+    QString tmpAssetDirPath = tmpAssetsDir.path();
     if (tmpAssetsDir.isValid()) {
         // Extract the sh3d file to temp dir
-        QMicroz::extract(app.arguments().at(1), tmpAssetsDir.path());
+        QMicroz::extract(app.arguments().at(1), tmpAssetDirPath);
+    }
+
+    // Now post-process the extracted 3D models:
+    //  - rename ./<number> model files to ./number.obj or ./number.dae depending on detected content
+    //  - in .obj files, add a header line with "usemtl :/resources/default.mtl" which will hopefully become the actual default.mtl file content
+    //  - process all obj and dae file to build a map { index->texture_name } for each 3D model file
+
+    // First, find all the pointed models in Home.xml
+    QStringList listModelUsed;
+    QFile xmlModelFile(tmpAssetDirPath + "/Home.xml");
+    if (xmlModelFile.open(QIODeviceBase::ReadOnly)) {
+        QString xmlModelFileContent = xmlModelFile.readAll();
+        xmlModelFile.close();
+
+        static const QRegularExpression modelAttrRE(R"( model=['"]([^'"]+))");
+        QRegularExpressionMatchIterator modelAttrMatchIter = modelAttrRE.globalMatch(xmlModelFileContent);
+        while (modelAttrMatchIter.hasNext()) {
+            QRegularExpressionMatch modelAttrMatch = modelAttrMatchIter.next();
+            listModelUsed.append(modelAttrMatch.captured(1));
+        }
+    }
+
+    listModelUsed.removeDuplicates();
+    for(const QString &modelFileRelPath: listModelUsed) {
+        QFileInfo resFileInfo(tmpAssetDirPath + "/" + modelFileRelPath);
+        if (!resFileInfo.isFile()) continue;
+
+        QString resFileSuffix = resFileInfo.suffix();
+        if (resFileSuffix.isNull()) {
+            // check content, detect DAE or OBJ files
+            QFile resFile(resFileInfo.absoluteFilePath());
+            if (resFile.open(QIODeviceBase::ReadOnly)) {
+
+                static QMap<QStringList, QString> magic_tokens({
+                    { QStringList({ "mtllib", "usemtl ", "v ", "vt ", "vn ", "o ", "g ", "s ", "f " }), ".obj" },
+                    { QStringList({ "<collada" }), ".dae" }
+                });
+
+                QTextStream resStream (&resFile);
+                QString lineToSearch;
+                QString foundFileType;
+                do {
+                    lineToSearch = resStream.readLine();
+                    for (auto magic_tokenlist =  magic_tokens.cbegin(); foundFileType.isNull() && magic_tokenlist != magic_tokens.cend(); ++magic_tokenlist) {
+                        for (const QString &magic_token: magic_tokenlist.key()) {
+                            if (lineToSearch.contains(magic_token, Qt::CaseSensitive)) {
+                                foundFileType = magic_tokenlist.value();
+                                break;
+                            }
+                        }
+                    }
+                } while (foundFileType.isNull() && !lineToSearch.isNull());
+
+                resFile.close();
+
+                if (!foundFileType.isNull()) {
+                    // rename it
+                    resFile.rename(resFile.fileName() + foundFileType);
+                }
+                if (foundFileType == ".obj") {
+                    // prepend usemtl :/resources/default.mtl at the beginning of the file
+                    if (resFile.open(QIODeviceBase::ReadOnly)) {
+                        QByteArray fullObjContent = resFile.readAll();
+                        resFile.close();
+
+                        if (resFile.open(QIODeviceBase::WriteOnly /*this will empty the file*/)) {
+                            resFile.write("usemtl :/resources/default.mtl\n");
+                            resFile.write(fullObjContent);
+                            resFile.close();
+                        }
+                    }
+                }
+            }
+        }
     }
 #endif
 

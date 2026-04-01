@@ -11,6 +11,12 @@ QUrl SH3DAssetUrlHandler::intercept(const QUrl& path, QQmlAbstractUrlInterceptor
     auto scheme = path.scheme();
     if (scheme == assetScheme) {
         QFileInfo fi("sh3d:" + path.toString().mid(5));
+        if (!fi.exists() && fi.suffix().isNull()) {
+            for (const QString &modelExt: { ".obj", ".dae" }) {
+                QString filePathWithExt = fi.filePath() + modelExt;
+                if (QFileInfo().exists(filePathWithExt)) return QUrl::fromLocalFile(filePathWithExt);
+            }
+        }
         if (fi.exists()) {
 #if 0
 // not useful here, as our dirSearchPath doesn't contain a resource target

@@ -43,11 +43,12 @@ QList<QDomElement> _findMatchingChildren(const QDomElement &xmlElt, const QStrin
     if (!childQueryParams.hasMatch()) {
         nodeTagToMatch = childQuery;
     } else {
-        nodeTagToMatch = childQueryParams.captured(0);
-        nodeAttrToMatch = childQueryParams.captured(1);
-        nodeAttrValueToMatch = childQueryParams.captured(2);
+        nodeTagToMatch = childQueryParams.captured(1);
+        nodeAttrToMatch = childQueryParams.captured(2);
+        nodeAttrValueToMatch = childQueryParams.captured(3);
     }
 
+    if (children.length() == 0) return matchingChildren;
     for (const QDomNode &child: children) {
         QDomElement childElt = child.toElement();
         if (childElt.isNull()) continue;

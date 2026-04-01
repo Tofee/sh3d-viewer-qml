@@ -1,4 +1,4 @@
-# Description of the default Java 3D materials at MTL format 
+# Description of the default Java 3D materials at MTL format
 # (copied from com.sun.j3d.loaders.objectfile.DefaultMaterials class with inverse d transparency factor)
 newmtl amber
 Ka 0.0531 0.0531 0.0531

@@ -41,7 +41,16 @@ qt_add_qml_module(appsh3d_viewer_qml
 
     RESOURCES qml/js/earcut.js
 
+    RESOURCES resources/default.mtl
+
+    #RESOURCES resources/lake_pier_1k.hdr
+    #RESOURCES resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+    #RESOURCES resources/OpenfootageNET_Paris_MenilmontonDAY_low.hdr
+    #RESOURCES resources/little_paris_eiffel_tower_1k.hdr
+    #RESOURCES resources/little_paris_eiffel_tower_2k.hdr
+
     SOURCES src/Sh3dHomeModel.h src/Sh3dHomeModel.cpp
+    QML_FILES qml/models/MaterialModel.qml
 )
 
 # Add include directories so target can find the QMLELEMENTS
