@@ -16,6 +16,7 @@ class Sh3dHomeModel : public QObject
 public:
     explicit Sh3dHomeModel(QObject *parent = nullptr);
 
+    void loadHomeXmlContent(const QString &homeXmlPath);
     void loadHomeXmlContent(const QByteArray &homeXmlContent);
 
     Q_INVOKABLE QList<QVariant> runQuery(const QString &query, const QString &skipNode);

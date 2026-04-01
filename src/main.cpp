@@ -2,10 +2,14 @@
 #include <QQmlApplicationEngine>
 #include <QDomDocument>
 #include <QFile>
-#include <QMap>
 #include <QString>
+#if 0
+#include <QMap>
 #include <QResource>
 #include <QByteArray>
+#else
+#include <QTemporaryDir>
+#endif
 #include <QDebug>
 
 #include "Sh3dHomeModel.h"
@@ -25,6 +29,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+#if USE_QRESOURCE_ASSETS
     // This BufList will hold all the data of the sh3d zip file
     BufList sh3dDataMap;
 
@@ -49,7 +54,13 @@ int main(int argc, char *argv[])
         qDebug() << "Registering " << ("/sh3d/"+filePath) << " as a resource. Bytes: " << fileData.size();
         bool ok = QResource::registerResource(reinterpret_cast<const uchar*>(fileData_i.value().constData()), "/sh3d/"+filePath);
     }
-
+#else
+    QTemporaryDir tmpAssetsDir;
+    if (tmpAssetsDir.isValid()) {
+        // Extract the sh3d file to temp dir
+        QMicroz::extract(app.arguments().at(1), tmpAssetsDir.path());
+    }
+#endif
 
     QQmlApplicationEngine engine;
     QObject::connect(
@@ -59,11 +70,11 @@ int main(int argc, char *argv[])
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
 
-    Sh3dHomeModel *homeModel = engine.singletonInstance<Sh3dHomeModel *>("sh3d_viewer_qml", "Sh3dHomeModel");
-    homeModel->loadHomeXmlContent(sh3dDataMap["Home.xml"]);
+    SH3DAssetUrlHandler sh3dUrlHandler(tmpAssetsDir.path());
+    engine.addUrlInterceptor(&sh3dUrlHandler);
 
-//    SH3DAssetUrlHandler sh3dUrlHandler;
-//    engine.addUrlInterceptor(&sh3dUrlHandler);
+    Sh3dHomeModel *homeModel = engine.singletonInstance<Sh3dHomeModel *>("sh3d_viewer_qml", "Sh3dHomeModel");
+    homeModel->loadHomeXmlContent(QString("sh3d:/Home.xml"));
 
     engine.loadFromModule("sh3d_viewer_qml", "Main");
 

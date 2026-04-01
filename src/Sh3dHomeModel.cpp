@@ -1,6 +1,7 @@
 #include "Sh3dHomeModel.h"
 
 #include <QByteArray>
+#include <QFile>
 #include <QDomDocument>
 #include <QVariantList>
 #include <QRegularExpression>
@@ -8,6 +9,15 @@
 Sh3dHomeModel::Sh3dHomeModel(QObject *parent)
     :QObject{parent}
 {
+}
+
+void Sh3dHomeModel::loadHomeXmlContent(const QString &homeXmlPath)
+{
+    QFile xmlHomrFile(homeXmlPath);
+    if (xmlHomrFile.open(QIODevice::ReadOnly)) {
+        _homeXmlDoc.setContent(&xmlHomrFile);
+    }
+    xmlHomrFile.close();
 }
 
 void Sh3dHomeModel::loadHomeXmlContent(const QByteArray &homeXmlContent)

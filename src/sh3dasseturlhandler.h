@@ -8,8 +8,8 @@
 class SH3DAssetUrlHandler : public QQmlAbstractUrlInterceptor
 {
 public:
-    SH3DAssetUrlHandler() {
-        QDir::setSearchPaths(assetScheme,{":/sh3d"});
+    SH3DAssetUrlHandler(const QString &assetDirPath) {
+        QDir::setSearchPaths(assetScheme,{ assetDirPath });
     }
 
     virtual QUrl intercept(const QUrl& path, QQmlAbstractUrlInterceptor::DataType type) override;

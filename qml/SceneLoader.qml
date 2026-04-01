@@ -12,12 +12,6 @@ import "models"
 Item {
     id: root
 
-    // -----------------------------------------------------------------
-    //  XML source – replace with the real path to your .sh3d file
-    // -----------------------------------------------------------------
-    property url xmlSourceDir: ":/sh3d/"
-    property url homeXmlSource: root.xmlSourceDir + "Home.xml"
-
     HomeModel {
         id: homeModel
     }
@@ -123,7 +117,7 @@ Item {
         Repeater3D {
             model: furnitureModel
             delegate: FurnitureDelegate {
-                furnitureSource: "qrc:///sh3d/"+model.modelFile
+                furnitureSource: "sh3d:/"+model.modelFile
 
                 modelAngle: model.angle
                 modelX: model.x
@@ -141,7 +135,7 @@ Item {
             model: lightModel
             delegate: LightDelegate {
                     id: lightDelegate
-                    furnitureSource: root.xmlSourceDir + (model.modelFile.includes(".") ? model.modelFile : (model.modelFile + ".obj"))
+                    furnitureSource: "sh3d:/"+model.modelFile
 
                     modelAngle: 0
                     modelX: model.x
