@@ -121,13 +121,13 @@ int main(int argc, char *argv[])
                     resFile.rename(resFile.fileName() + foundFileType);
                 }
                 if (foundFileType == ".obj") {
-                    // prepend usemtl :/resources/default.mtl at the beginning of the file
+                    // prepend mtllib :/resources/default.mtl at the beginning of the file
                     if (resFile.open(QIODeviceBase::ReadOnly)) {
                         QByteArray fullObjContent = resFile.readAll();
                         resFile.close();
 
                         if (resFile.open(QIODeviceBase::WriteOnly /*this will empty the file*/)) {
-                            resFile.write("usemtl :/resources/default.mtl\n");
+                            resFile.write("mtllib :/resources/default.mtl\n");
                             resFile.write(fullObjContent);
                             resFile.close();
                         }

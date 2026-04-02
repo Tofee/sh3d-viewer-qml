@@ -1,0 +1,6 @@
+{
+    "options": {
+        "removeRedundantMaterials": false,
+        "generateMeshLevelsOfDetail": true
+    }
+}

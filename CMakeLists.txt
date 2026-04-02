@@ -51,6 +51,7 @@ qt_add_qml_module(appsh3d_viewer_qml
 
     SOURCES src/Sh3dHomeModel.h src/Sh3dHomeModel.cpp
     QML_FILES qml/models/MaterialModel.qml
+    QML_FILES assimpimporter/options.json
 )
 
 # Add include directories so target can find the QMLELEMENTS

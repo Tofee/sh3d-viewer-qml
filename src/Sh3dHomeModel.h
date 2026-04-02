@@ -20,6 +20,7 @@ public:
     void loadHomeXmlContent(const QByteArray &homeXmlContent);
 
     Q_INVOKABLE QList<QVariant> runQuery(const QString &query, const QString &skipNode);
+    Q_INVOKABLE QList<QString> retrieveMaterialNames(const QUrl &modelPath, bool removeDuplicates = true);
 
 signals:
 

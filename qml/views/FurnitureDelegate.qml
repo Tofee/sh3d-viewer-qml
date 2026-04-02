@@ -6,6 +6,8 @@ import QtQuick3D.AssetUtils
 import "."
 import "../models"
 
+import sh3d_viewer_qml
+
 Node {
     id: rootNode
     property url furnitureSource
@@ -29,10 +31,13 @@ Node {
             property vector3d posCenter: bounds.minimum.plus(bounds.maximum).times(0.5)
             property vector3d furnitureSize: bounds.maximum.minus(bounds.minimum)
 
+            property list<string> listMaterialNames: Sh3dHomeModel.retrieveMaterialNames(furnitureLoader.source)
+
             Instantiator {
                 id: customMaterials
                 model: materialModel
                 delegate: PrincipledMaterial {
+                    objectName: model.name
                     baseColor: model.color ? '#'+model.color : ''
                     baseColorMap: Texture {
                         source: model.texture_image ? Qt.resolvedUrl("sh3d:///"+model.texture_image) : ''
@@ -65,10 +70,10 @@ Node {
             function overrideMaterials() {
                 if (status == RuntimeLoader.Success && materialsAllLoaded) {
                     var lastChild = children[children.length-1];
-                    console.log("customMaterials.count = "+customMaterials.count+" lastChild.children.length="+lastChild.children.length);
+                    console.log(rootNode.furnitureSource.toString()+" listMaterialNames: = "+listMaterialNames+" lastChild.children:"+lastChild.children.length);
                     // lastChild holds the materials, then the Model
                     for (let i=0; i<customMaterials.count && i<lastChild.children.length-1; ++i) {
-                        console.log("Overriding material "+lastChild.children[i]+" with "+customMaterials.objectAt(i));
+                        //console.log("Overriding material "+lastChild.children[i]+" with "+customMaterials.objectAt(i));
                         if (lastChild.children[i].hasOwnProperty('baseColorMap'))
                             lastChild.children[i].baseColorMap = customMaterials.objectAt(i).baseColorMap;
                         if (lastChild.children[i].hasOwnProperty('baseColor'))
@@ -77,17 +82,15 @@ Node {
                             lastChild.children[i].source = customMaterials.objectAt(i).baseColorMap.source;
                     }
 
-                    if (furnitureLoader.source === "sh3d:/83/model.dae") {
-                        // this is a DAE model, let's see what it holds
-                        var lastChild = children[children.length-1];
+                    if (rootNode.furnitureSource.toString() === "sh3d:/106/texturableBox.obj") {
                         // lastChild holds the materials, then the Model
-                        //lastChild.children[1].baseColor = "#ffffff";
-                        //lastChild.children[1].baseColorMap = myQtTexture;
+                        console.log("materials:" + lastChild.materials)
+                        console.log("Model materials:" + lastChild.children[lastChild.children.length-1].materials)
                         for (let mat_i in lastChild.children) {
                             let material_i = lastChild.children[mat_i];
-                            if (material_i.baseColorMap) /*QQuick3DPrincipledMaterial*/
+                            if (material_i.hasOwnProperty('baseColorMap') && !!material_i.baseColorMap) /*QQuick3DPrincipledMaterial*/
                                 console.log("source: "+mat_i+" "+material_i.baseColorMap.source);
-                            else if (material_i.source)
+                            else if (material_i.hasOwnProperty('source'))
                                 console.log("source: "+mat_i+" "+material_i.source);
                             else
                                 console.log("source: "+mat_i+" "+material_i+" "+material_i.baseColor);

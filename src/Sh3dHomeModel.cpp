@@ -103,3 +103,23 @@ QList<QVariant> Sh3dHomeModel::runQuery(const QString &query, const QString &ski
     return results;
 }
 
+QList<QString> Sh3dHomeModel::retrieveMaterialNames(const QUrl &modelPath, bool removeDuplicates)
+{
+    QStringList listMaterialNames;
+    QFile modelFilePath(modelPath.toLocalFile());
+    if (modelFilePath.open(QIODeviceBase::ReadOnly)) {
+        QString modelFileContent = modelFilePath.readAll();
+        modelFilePath.close();
+
+        static const QRegularExpression materialObjRE(R"(usemtl (.+)\n)");
+        QRegularExpressionMatchIterator materialObjMatchIter = materialObjRE.globalMatch(modelFileContent);
+        while (materialObjMatchIter.hasNext()) {
+            QRegularExpressionMatch materialObjMatch = materialObjMatchIter.next();
+            listMaterialNames.append(materialObjMatch.captured(1));
+        }
+    }
+
+    if (removeDuplicates) listMaterialNames.removeDuplicates();
+
+    return listMaterialNames;
+}
