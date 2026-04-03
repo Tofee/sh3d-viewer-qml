@@ -1,0 +1,9 @@
+{
+    "calculateTangentSpace": true,
+    "joinIdenticalVertices": true,
+    "improveCacheLocality": true,
+    "findDegenerates": true,
+    "findInvalidData": true,
+    "splitLargeMeshes": true,
+    "removeRedundantMaterials": false
+}

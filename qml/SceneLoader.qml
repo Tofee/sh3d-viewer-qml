@@ -133,6 +133,7 @@ Item {
                 modelWidth: model.width
                 modelDepth: model.depth
                 modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
+                modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
             }
         }
 

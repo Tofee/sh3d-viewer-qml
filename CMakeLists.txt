@@ -4,7 +4,7 @@ project(sh3d_viewer_qml VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Xml Quick3D)
+find_package(Qt6 REQUIRED COMPONENTS Quick Xml Quick3D Quick3DPrivate Quick3DAssetUtilsPrivate)
 
 qt_standard_project_setup(REQUIRES 6.10)
 
@@ -18,6 +18,9 @@ qt_add_executable(appsh3d_viewer_qml
     src/main.cpp
     src/sh3dasseturlhandler.h src/sh3dasseturlhandler.cpp
 )
+
+qt_add_resources(appsh3d_viewer_qml "assimpimporter_options"
+    FILES resources/assimpimporter_options.json)
 
 qt_add_qml_module(appsh3d_viewer_qml
     URI sh3d_viewer_qml
@@ -38,10 +41,12 @@ qt_add_qml_module(appsh3d_viewer_qml
         qml/models/Sh3dXmlModel.qml
         qml/models/LightSourceModel.qml
         qml/views/LightDelegate.qml
+        qml/models/MaterialModel.qml
 
     RESOURCES qml/js/earcut.js
 
-    RESOURCES resources/default.mtl
+    RESOURCES
+        resources/default.mtl
 
     #RESOURCES resources/lake_pier_1k.hdr
     #RESOURCES resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr
@@ -50,8 +55,7 @@ qt_add_qml_module(appsh3d_viewer_qml
     #RESOURCES resources/little_paris_eiffel_tower_2k.hdr
 
     SOURCES src/Sh3dHomeModel.h src/Sh3dHomeModel.cpp
-    QML_FILES qml/models/MaterialModel.qml
-    QML_FILES assimpimporter/options.json
+    SOURCES src/sh3druntimeloader.cpp src/sh3druntimeloader.h
 )
 
 # Add include directories so target can find the QMLELEMENTS
@@ -68,6 +72,7 @@ set_target_properties(appsh3d_viewer_qml PROPERTIES
 
 target_link_libraries(appsh3d_viewer_qml
     PRIVATE Qt6::Quick Qt6::Quick3D Qt6::Xml
+    PRIVATE Qt6::Quick3DPrivate Qt6::Quick3DAssetUtilsPrivate
     PRIVATE qmicroz
 )
 

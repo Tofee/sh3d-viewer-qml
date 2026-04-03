@@ -4,7 +4,11 @@
 #include <QFile>
 #include <QDomDocument>
 #include <QVariantList>
+#include <QList>
 #include <QRegularExpression>
+#include <QVector3D>
+#include <QMatrix3x3>
+#include <QQuaternion>
 
 Sh3dHomeModel::Sh3dHomeModel(QObject *parent)
     :QObject{parent}
@@ -111,15 +115,32 @@ QList<QString> Sh3dHomeModel::retrieveMaterialNames(const QUrl &modelPath, bool 
         QString modelFileContent = modelFilePath.readAll();
         modelFilePath.close();
 
+        // OBJ: look for usemtl material_name
         static const QRegularExpression materialObjRE(R"(usemtl (.+)\n)");
         QRegularExpressionMatchIterator materialObjMatchIter = materialObjRE.globalMatch(modelFileContent);
         while (materialObjMatchIter.hasNext()) {
             QRegularExpressionMatch materialObjMatch = materialObjMatchIter.next();
             listMaterialNames.append(materialObjMatch.captured(1));
         }
+
+        // DAE: look for <material ... name="material_name">
+        static const QRegularExpression materialDaeRE(R"(<material .*name="([^"]+))");
+        QRegularExpressionMatchIterator materialDaeMatchIter = materialDaeRE.globalMatch(modelFileContent);
+        while (materialDaeMatchIter.hasNext()) {
+            QRegularExpressionMatch materialDaeMatch = materialDaeMatchIter.next();
+            listMaterialNames.append(materialDaeMatch.captured(1));
+        }
     }
 
     if (removeDuplicates) listMaterialNames.removeDuplicates();
 
     return listMaterialNames;
+}
+
+QVector3D Sh3dHomeModel::getEulerAnglesFromRotationMatrix(const QList<float> &iRotationMatrixCoefs)
+{
+    QMatrix3x3 rotationMatrix(iRotationMatrixCoefs.constData());
+    QQuaternion::EulerAngles<float> eulerAngles = QQuaternion::fromRotationMatrix(rotationMatrix).normalized().eulerAngles();
+
+    return QVector3D(eulerAngles.pitch, eulerAngles.yaw, eulerAngles.roll);
 }

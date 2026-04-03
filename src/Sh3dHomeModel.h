@@ -5,6 +5,8 @@
 #include <QDomDocument>
 #include <QQmlEngine>
 #include <QVariantList>
+#include <QVector3D>
+#include <QList>
 
 class QByteArray;
 
@@ -21,6 +23,7 @@ public:
 
     Q_INVOKABLE QList<QVariant> runQuery(const QString &query, const QString &skipNode);
     Q_INVOKABLE QList<QString> retrieveMaterialNames(const QUrl &modelPath, bool removeDuplicates = true);
+    Q_INVOKABLE QVector3D getEulerAnglesFromRotationMatrix(const QList<float> &iRotationMatrixCoefs);
 
 signals:
 
