@@ -57,7 +57,8 @@ QStringList SH3DRuntimeLoader::supportedExtensions()
 
     static const QStringList supportedExtensions = { QLatin1StringView("obj"),
                                                      QLatin1StringView("gltf"),
-                                                     QLatin1StringView("glb")};
+                                                     QLatin1StringView("glb"),
+                                                     QLatin1StringView("3ds")};
 
     QSSGAssetImportManager importManager;
     const auto types = importManager.getImporterPluginInfos();

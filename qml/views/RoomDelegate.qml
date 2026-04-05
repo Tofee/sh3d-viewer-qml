@@ -22,6 +22,8 @@ Node {
         id: floorModel
         visible: roomNode.floorVisible
         roomPoints: roomPointsModel.allPoints
+
+        roomId: roomNode.roomId
     }
 /*
     // Ceiling
@@ -29,5 +31,7 @@ Node {
         id: ceilingModel
         visible: ceilingVisible
         roomPoints: roomPointsModel.allPoints
+
+        roomId: roomNode.roomId
     }*/
 }

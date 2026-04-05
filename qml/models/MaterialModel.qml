@@ -10,9 +10,6 @@ Sh3dXmlModel {
     property string parentTag
 
     defaultInitValues: ({ name: '',
-                          color: '',
-                          texture_width: '',
-                          texture_height: '',
-                          texture_image: '',
+                          color: ''
                         })
 }

@@ -19,13 +19,16 @@ QUrl SH3DAssetUrlHandler::intercept(const QUrl& path, QQmlAbstractUrlInterceptor
         }
         if (fi.exists()) {
 #if 0
-// not useful here, as our dirSearchPath doesn't contain a resource target
+            // not useful here, as our dirSearchPath doesn't contain a resource target
             if (fi.filePath().startsWith(":/")) {
                 // we need to deal with files in the resources by adding the url scheme for them
                 return QUrl("qrc" + fi.filePath());
             }
 #endif
             return QUrl::fromLocalFile(fi.filePath());
+        }
+        else {
+            printf("Couldn't fine %s !\n", fi.filePath().toLatin1().data());
         }
     }
     return path;

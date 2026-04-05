@@ -12,6 +12,9 @@ import "models"
 Item {
     id: root
 
+    // performance reason
+    property bool useOnlyDirectionalLight: true
+
     HomeModel {
         id: homeModel
     }
@@ -23,6 +26,9 @@ Item {
     }
     FurnitureModel {
         id: furnitureModel
+    }
+    ShelfModel {
+        id: shelfModel
     }
     LightModel {
         id: lightModel
@@ -56,17 +62,29 @@ Item {
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
             backgroundMode: SceneEnvironment.SkyBox
-            lightProbe: Texture { source: "../resources/little_paris_eiffel_tower_2k.hdr" }
-            tonemapMode: SceneEnvironment.TonemapModeFilmic
+            lightProbe: Texture { source: ":/resources/little_paris_eiffel_tower_2k.hdr" }
+            tonemapMode: SceneEnvironment.TonemapModeLinear
             clearColor: "#6060A0"
         }
+
         camera: PerspectiveCamera {
             id: mainCamera
         }
 
         DirectionalLight {
-            eulerRotation.x: -30
-            eulerRotation.y: -70
+            color: "white"
+            brightness: 2
+            eulerRotation: Qt.vector3d(-80, -70, 0)
+            use32BitShadowmap: true
+            castsShadow: true
+            shadowFactor: 50
+            shadowMapQuality: DirectionalLight.ShadowMapQualityVeryHigh
+            csmNumSplits: 0
+            lockShadowmapTexels: false
+            softShadowQuality: Light.PCF32
+            pcfFactor: 2
+
+            visible: useOnlyDirectionalLight
         }
 
         WasdController {
@@ -88,6 +106,8 @@ Item {
                 thickness: model.thickness
                 height: model.height
                 arcExtent: model.arcExtent
+                leftSideColor: '#'+model.leftSideColor
+                rightSideColor: '#'+model.rightSideColor
             }
         }
 
@@ -127,6 +147,33 @@ Item {
                 }
 
                 modelAngle: model.angle
+                modelPitch: model.pitch
+                modelRoll: model.roll
+                modelX: model.x
+                modelY: model.y
+                modelHeight: model.height
+                modelWidth: model.width
+                modelDepth: model.depth
+                modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
+                modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
+            }
+        }
+        // ----- Furniture (Shelves) ------------------------------------------------
+        Repeater3D {
+            model: shelfModel
+            delegate: FurnitureDelegate {
+                furnitureSource: "sh3d:/"+model.modelFile
+
+                materialModel: MaterialModel {
+                    queryId: model.id
+                    parentTag: "shelfUnit"
+
+                    Component.onCompleted: loadElementsFromDocumentWithQuery()
+                }
+
+                modelAngle: model.angle
+                modelPitch: model.pitch
+                modelRoll: model.roll
                 modelX: model.x
                 modelY: model.y
                 modelHeight: model.height
@@ -142,8 +189,7 @@ Item {
         Repeater3D {
             model: lightModel
             delegate: LightDelegate {
-                    id: lightDelegate
-                    furnitureSource: "sh3d:/"+model.modelFile
+                    furnitureSource: model.catalogId==='eTeks#halogenLightSource' ? "qrc:/resources/light-sphere.obj" : ("sh3d:/"+model.modelFile)
 
                     materialModel: MaterialModel {
                         queryId: model.id
@@ -152,13 +198,16 @@ Item {
                         Component.onCompleted: loadElementsFromDocumentWithQuery()
                     }
 
-                    modelAngle: 0
+                    modelAngle: model.angle
+                    modelPitch: model.pitch
+                    modelRoll: model.roll
                     modelX: model.x
                     modelY: model.y
                     modelHeight: model.height
                     modelWidth: model.width
                     modelDepth: model.depth
                     modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
+                    modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
 
                     lightPower: model.power
                     lightSourceModel: LightSourceModel {
@@ -166,6 +215,8 @@ Item {
 
                         Component.onCompleted: loadElementsFromDocumentWithQuery()
                     }
+
+                    useOnlyDirectionalLight: root. useOnlyDirectionalLight
                 }
         }
 /*

@@ -126,10 +126,15 @@ int main(int argc, char *argv[])
                         QByteArray fullObjContent = resFile.readAll();
                         resFile.close();
 
-                        if (resFile.open(QIODeviceBase::WriteOnly /*this will empty the file*/)) {
-                            resFile.write("mtllib :/resources/default.mtl\n");
-                            resFile.write(fullObjContent);
-                            resFile.close();
+                        if (QString(fullObjContent).contains("usemtl", Qt::CaseSensitive)) {
+                            if (resFile.open(QIODeviceBase::WriteOnly /*this will empty the file*/)) {
+                                resFile.write("mtllib :/resources/default.mtl\n");
+                                resFile.write(fullObjContent);
+                                resFile.close();
+                            }
+                        }
+                        else {
+                            printf("%s Don't insert default.mtl, no need.\n", resFile.fileName().toLatin1().data());
                         }
                     }
                 }

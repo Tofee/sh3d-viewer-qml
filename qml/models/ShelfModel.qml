@@ -2,5 +2,5 @@ import QtQuick
 import "."
 
 FurnitureModel {
-    query: "/home/light"
+    query: "/home/shelfUnit"
 }

@@ -3,5 +3,5 @@ import "."
 
 Sh3dXmlModel {
     query: "/home/wall"
-    defaultInitValues: ({ arcExtent: '0' })
+    defaultInitValues: ({ arcExtent: '0', leftSideColor: 'FFFFFF', rightSideColor: 'FFFFFF' })
 }

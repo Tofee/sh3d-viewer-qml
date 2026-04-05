@@ -10,11 +10,34 @@ Model {
     property variant roomPoints
     property int nbPoints: roomPoints ? roomPoints.length : 0
 
-    materials: [ DefaultMaterial { diffuseColor: "white" } ]
+    property string roomId
+/*
+    usedInBakedLighting: true
+    bakedLightmap: BakedLightmap {
+        enabled: true
+        key: "wholeScene"
+    }
+*/
+    materials: [
+        PrincipledMaterial {
+            baseColorMap: Texture {}
+            Component.onCompleted: {
+                let texturesOfMaterial = Sh3dHomeModel.runQuery("/room[@id='"+floorOrCeilingModel.roomId+"']/texture", "none");
+                if (texturesOfMaterial.length>0) {
+                    // only consider the first one
+                    if (texturesOfMaterial[0].hasOwnProperty('scale')) {
+                        baseColorMap.scaleU = texturesOfMaterial[0].scale;
+                        baseColorMap.scaleV = texturesOfMaterial[0].scale;
+                    }
+                    baseColor = "#ffffff";
+                    baseColorMap.source = "sh3d:/"+texturesOfMaterial[0].image;
+                }
+            }
+        }
+    ]
 
     geometry: ProceduralMesh {
         id: mainMesh
-        property bounds meshBounds;
         property var meshArrays: generateRoomSurface(roomPoints, thickness)
         positions: meshArrays.verts
         normals: meshArrays.normals
@@ -47,18 +70,18 @@ Model {
                 normals.push(vec3_Y_UP(0, 0, 1));
 
                 maxExtent.x = Math.max(maxExtent.x, roomPoints[i].x)
-                maxExtent.y = Math.max(maxExtent.y, roomPoints[i].x)
+                maxExtent.y = Math.max(maxExtent.y, roomPoints[i].y)
                 minExtent.x = Math.min(minExtent.x, roomPoints[i].x)
-                minExtent.y = Math.min(minExtent.y, roomPoints[i].x)
+                minExtent.y = Math.min(minExtent.y, roomPoints[i].y)
             }
 
             let widthSurface  = maxExtent.x - minExtent.x;
             let heightSurface = maxExtent.y - minExtent.y;
 
             for (i = 0; i < roomPoints.length; ++i) {
-                // U and V will correspond to the relative abs and ord, normalized to 1
-                uvs.push(Qt.vector2d((roomPoints[i].x-meshBounds.minimum.x) / widthSurface, (roomPoints[i].y-meshBounds.minimum.y) / heightSurface));
-                uvs.push(Qt.vector2d((roomPoints[i].x-meshBounds.minimum.x) / widthSurface, (roomPoints[i].y-meshBounds.minimum.y) / heightSurface));
+                // U and V will correspond to the relative abs and ord, normalized for a 200cmx200cm surface
+                uvs.push(Qt.vector2d((roomPoints[i].x-minExtent.x) / widthSurface, (roomPoints[i].y-minExtent.y) / heightSurface));
+                uvs.push(Qt.vector2d((roomPoints[i].x-minExtent.x) / widthSurface, (roomPoints[i].y-minExtent.y) / heightSurface));
             }
 
             // Create a mesh for the main surface

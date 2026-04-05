@@ -12,6 +12,8 @@ Node {
     id: rootNode
     property url furnitureSource
     property real modelAngle
+    property real modelPitch
+    property real modelRoll
     property real modelX
     property real modelY
     property real modelHeight
@@ -46,8 +48,13 @@ Node {
                             let texturesOfMaterial = Sh3dHomeModel.runQuery(materialModel.query + "/texture", materialModel.skipNode);
                             if (texturesOfMaterial.length>0) {
                                 // only consider the first one
-                                //baseColorMap.scaleU = texturesOfMaterial[0].width;
-                                //baseColorMap.scaleV = texturesOfMaterial[0].height;
+                                if (texturesOfMaterial[0].hasOwnProperty('scale')) {
+                                    pointed_texture.scaleU = texturesOfMaterial[0].scale;
+                                    pointed_texture.scaleV = texturesOfMaterial[0].scale;
+                                }
+                                if (texturesOfMaterial[0].hasOwnProperty('angle')) {
+                                    pointed_texture.rotationUV = texturesOfMaterial[0].angle * 180 / Math.PI;
+                                }
                                 baseColor = "#ffffff";
                                 baseColorMap = pointed_texture;
                                 pointed_texture.source = "sh3d:/"+texturesOfMaterial[0].image;
@@ -65,14 +72,11 @@ Node {
                     }
                 }
                 onStatusChanged: {
-                    if (!rootNode.modelEulerRotation.fuzzyEquals(Qt.vector3d(0,0,0))) {
-                        console.log(rootNode.furnitureSource.toString() + " modelEulerRotation="+modelEulerRotation)
-                    }
                      overrideMaterials();
                 }
 
                 function overrideMaterials() {
-                    if (status == RuntimeLoader.Success && materialsAllLoaded) {
+                    if (status == RuntimeLoader.Success && materialsAllLoaded && materialModel.count>0) {
                         var lastChild = children[children.length-1];
                         // lastChild holds the materials, then the Model. But we only override materials !
                         let targetMaterialsIndices = [];
@@ -85,7 +89,6 @@ Node {
                         }
 
                         for (let i_from=0; i_from<customMaterials.count; ++i_from) {
-                            //console.log("Overriding material "+lastChild.children[i]+" with "+customMaterials.objectAt(i));
                             let target_idx = listMaterialNames.indexOf(customMaterials.objectAt(i_from).objectName);
                             let target_idx_mat = targetMaterialsIndices[target_idx];
 
@@ -114,7 +117,7 @@ Node {
     }
 
     // Apply furniture's rotation, scale and position
-    eulerRotation: vec3_Y_UP(0, 0, -modelAngle * 180 / Math.PI)
-    scale: Qt.vector3d(modelWidth, modelHeight, modelDepth)
+    eulerRotation: vec3_Y_UP(modelPitch, modelRoll, modelAngle).times(-180 / Math.PI)
+    scale: vec3_Y_UP(modelWidth, modelDepth, modelHeight)
     position: vec3_Y_UP(modelX, modelY, modelHeight/2 + modelElevation)
 }

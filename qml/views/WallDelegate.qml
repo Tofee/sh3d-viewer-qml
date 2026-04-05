@@ -10,15 +10,28 @@ Loader3D {
     property real thickness
     property real height
     property real arcExtent
+    property color leftSideColor
+    property color rightSideColor
 
     sourceComponent: (arcExtent && arcExtent>0) ? arcWallModel : simpleWallModel
 
     property Component arcWallModelComp : Component {
         id: arcWallModel
         Model {
-            materials: DefaultMaterial {
-                diffuseColor: "#d0d0d0"
+            /*
+            usedInBakedLighting: true
+            bakedLightmap: BakedLightmap {
+                enabled: true
+                key: "wall"
             }
+            */
+
+            materials: [ PrincipledMaterial { baseColor: "white" },
+                         PrincipledMaterial { baseColor: "white" },
+                         PrincipledMaterial { baseColor: "white" },
+                         PrincipledMaterial { baseColor: "white" },
+                         PrincipledMaterial { baseColor: leftSideColor },
+                         PrincipledMaterial { baseColor: rightSideColor } ]
             geometry: ProceduralMesh {
                 id: arcWallMesh
                 property int  nbPoints: 10
@@ -119,11 +132,21 @@ Loader3D {
     property Component simpleWallComp: Component {
         id: simpleWallModel
         Model {
-            // Simple rectangular prism for a wall
-            source: "#Cube"
-            materials: DefaultMaterial {
-                diffuseColor: "#c0c0c0"
+/*
+            usedInBakedLighting: true
+            bakedLightmap: BakedLightmap {
+                enabled: true
+                key: "wholeScene"
             }
+*/
+            // Simple rectangular cube for a wall
+            source: "#Cube"
+            materials: [ PrincipledMaterial { baseColor: "white"; roughness: 0 },
+                         PrincipledMaterial { baseColor: "white" },
+                         PrincipledMaterial { baseColor: leftSideColor },
+                         PrincipledMaterial { baseColor: rightSideColor },
+                         PrincipledMaterial { baseColor: "white" },
+                         PrincipledMaterial { baseColor: "white" } ]
 
             // Compute centre + orientation from the two end points
             property real dx: xEnd - xStart
