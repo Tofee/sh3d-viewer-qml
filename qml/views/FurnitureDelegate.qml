@@ -34,7 +34,7 @@ Node {
                 property vector3d posCenter: bounds.minimum.plus(bounds.maximum).times(0.5)
                 property vector3d furnitureSize: bounds.maximum.minus(bounds.minimum)
 
-                property list<string> listMaterialNames: Sh3dHomeModel.retrieveMaterialNames(furnitureLoader.source)
+                property list<string> listMaterialNames: furnitureLoader.materialNames;
 
                 Instantiator {
                     id: customMaterials
@@ -43,14 +43,14 @@ Node {
                         property Texture pointed_texture: Texture {}
 
                         objectName: model.name
-                        baseColor: model.color ? '#'+model.color : ''
+                        baseColor: model.color ? ('#'+model.color) : "#00000000"
                         Component.onCompleted: {
                             let texturesOfMaterial = Sh3dHomeModel.runQuery(materialModel.query + "/texture", materialModel.skipNode);
                             if (texturesOfMaterial.length>0) {
                                 // only consider the first one
                                 if (texturesOfMaterial[0].hasOwnProperty('scale')) {
-                                    pointed_texture.scaleU = texturesOfMaterial[0].scale;
-                                    pointed_texture.scaleV = texturesOfMaterial[0].scale;
+                                    pointed_texture.scaleU = 1/texturesOfMaterial[0].scale;
+                                    pointed_texture.scaleV = 1/texturesOfMaterial[0].scale;
                                 }
                                 if (texturesOfMaterial[0].hasOwnProperty('angle')) {
                                     pointed_texture.rotationUV = texturesOfMaterial[0].angle * 180 / Math.PI;
@@ -93,10 +93,15 @@ Node {
                             let target_idx_mat = targetMaterialsIndices[target_idx];
 
                             if (target_idx_mat>=0 && target_idx_mat<lastChild.children.length-1) {
-                                if (lastChild.children[target_idx_mat].hasOwnProperty('baseColorMap'))
+                                if (lastChild.children[target_idx_mat].hasOwnProperty('baseColorMap')) {
                                     lastChild.children[target_idx_mat].baseColorMap = customMaterials.objectAt(i_from).baseColorMap;
-                                if (lastChild.children[target_idx_mat].hasOwnProperty('baseColor'))
+                                }
+                                if (lastChild.children[target_idx_mat].hasOwnProperty('baseColor')) {
                                     lastChild.children[target_idx_mat].baseColor = customMaterials.objectAt(i_from).baseColor;
+                                    if (customMaterials.objectAt(i_from).baseColor === Qt.color("transparent")) {
+                                        lastChild.children[target_idx_mat].opacity = 0;
+                                    }
+                                }
                             }
                         }
                     }

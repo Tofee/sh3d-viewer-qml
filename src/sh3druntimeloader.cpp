@@ -150,6 +150,17 @@ void SH3DRuntimeLoader::loadSource()
     QString error(QStringLiteral("Unknown error"));
     auto result = importManager.importFile(m_source, scene, customOptions, &error);
 
+    for (auto &node: scene.resources) {
+        if (node->runtimeType == QSSGSceneDesc::Node::RuntimeType::PrincipledMaterial) {
+            // Add this material
+            m_materialNames.append(QString(node->name));
+        }
+        else if (node->runtimeType == QSSGSceneDesc::Node::RuntimeType::TextureData) {
+            // Add this texture
+        }
+    }
+    emit materialNamesChanged();
+
     switch (result) {
     case QSSGAssetImportManager::ImportState::Success:
         m_errorString = QStringLiteral("Success!");
@@ -254,6 +265,11 @@ void SH3DRuntimeLoader::setInstancing(QQuick3DInstancing *newInstancing)
     m_instancingChanged = true;
     updateModels();
     emit instancingChanged();
+}
+
+QStringList SH3DRuntimeLoader::materialNames()
+{
+    return m_materialNames;
 }
 
 QT_END_NAMESPACE

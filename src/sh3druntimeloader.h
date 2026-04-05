@@ -31,6 +31,7 @@ class SH3DRuntimeLoader : public QQuick3DNode
 #if QT_CONFIG(mimetype)
     Q_PROPERTY(QList<QMimeType> supportedMimeTypes READ supportedMimeTypes CONSTANT REVISION(6, 7))
 #endif
+    Q_PROPERTY(QStringList materialNames READ materialNames NOTIFY materialNamesChanged)
 
 public:
     explicit SH3DRuntimeLoader(QQuick3DNode *parent = nullptr);
@@ -42,6 +43,7 @@ public:
 #if QT_CONFIG(mimetype)
     Q_REVISION(6, 7) static QList<QMimeType> supportedMimeTypes();
 #endif
+    QStringList materialNames();
 
     enum class Status { Empty, Success, Error };
     Q_ENUM(Status)
@@ -58,6 +60,7 @@ Q_SIGNALS:
     void errorStringChanged();
     void boundsChanged();
     void instancingChanged();
+    void materialNamesChanged();
 
 protected:
     QSSGRenderGraphObject *updateSpatialNode(QSSGRenderGraphObject *node) override;
@@ -77,6 +80,7 @@ private:
     QQuick3DBounds3 m_bounds;
     QQuick3DInstancing *m_instancing = nullptr;
     bool m_instancingChanged = false;
+    QStringList m_materialNames;
 };
 
 #endif // SH3DRUNTIMELOADER_H

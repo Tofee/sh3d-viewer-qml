@@ -13,7 +13,7 @@ Item {
     id: root
 
     // performance reason
-    property bool useOnlyDirectionalLight: true
+    property bool useOnlyDirectionalLight: false
 
     HomeModel {
         id: homeModel
@@ -62,7 +62,7 @@ Item {
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
             backgroundMode: SceneEnvironment.SkyBox
-            lightProbe: Texture { source: ":/resources/little_paris_eiffel_tower_2k.hdr" }
+            lightProbe: Texture { source: "qrc:///qt/qml/resources/little_paris_eiffel_tower_2k.hdr" }
             tonemapMode: SceneEnvironment.TonemapModeLinear
             clearColor: "#6060A0"
         }
@@ -75,6 +75,7 @@ Item {
             color: "white"
             brightness: 2
             eulerRotation: Qt.vector3d(-80, -70, 0)
+            /*
             use32BitShadowmap: true
             castsShadow: true
             shadowFactor: 50
@@ -83,18 +84,18 @@ Item {
             lockShadowmapTexels: false
             softShadowQuality: Light.PCF32
             pcfFactor: 2
-
+            */
             visible: useOnlyDirectionalLight
         }
 
         WasdController {
             controlledObject: mainCamera
         }
-
+/*
         AxisHelper {
             id: axisHelper
         }
-
+*/
         // ----- Walls ----------------------------------------------------
         Repeater3D {
             model: wallModel
@@ -189,7 +190,8 @@ Item {
         Repeater3D {
             model: lightModel
             delegate: LightDelegate {
-                    furnitureSource: model.catalogId==='eTeks#halogenLightSource' ? "qrc:/resources/light-sphere.obj" : ("sh3d:/"+model.modelFile)
+                    property url undefined_url
+                    furnitureSource: model.catalogId==='eTeks#halogenLightSource' ? undefined_url : ("sh3d:/"+model.modelFile)
 
                     materialModel: MaterialModel {
                         queryId: model.id
@@ -216,7 +218,7 @@ Item {
                         Component.onCompleted: loadElementsFromDocumentWithQuery()
                     }
 
-                    useOnlyDirectionalLight: root. useOnlyDirectionalLight
+                    useOnlyDirectionalLight: root.useOnlyDirectionalLight
                 }
         }
 /*
