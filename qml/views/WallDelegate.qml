@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
 
+import "../js/jscad-modeling.min.js" as JSCad
+import "../js/parseSvgPathData.min.js" as ParseSVG
+
 Loader3D {
     property real xStart
     property real xEnd
@@ -140,7 +143,55 @@ Loader3D {
             }
 */
             // Simple rectangular cube for a wall
-            source: "#Cube"
+            geometry: ProceduralMesh {
+                id: arcWallMesh
+                property int  nbPoints: 10
+                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height, nbPoints)
+                positions: meshArrays.verts
+                normals: meshArrays.normals
+                uv0s: meshArrays.uvs
+                indexes: meshArrays.indices
+
+                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real, nbPoints: int): variant {
+                    let verts = []
+                    let normals = []
+                    let uvs = []
+                    let indices = []
+                    let i = 0;
+
+                    let wallLine = vec3_Y_UP(xEnd-xStart, yEnd-yStart, 0);
+                    let wallPerpendicularVector = vec3_Y_UP(0, 0, 1).crossProduct(wallLine.normalized());
+
+                    try {
+                        // keep in mind that we are using "Y-Up" display, so height goes along Y
+                        let straightWall = JSCad.modeling.primitives.cuboid({size: [wallLine.length(), wallHeight, wallThickness]})
+
+                        // TODO: translate the wall and/or the windows to the right positions !
+                        //       by default, JSCad objects are centered on the origin
+
+                        let windowPath = ParseSVG.parseSvgPathData("M0,0 v1 h1 v-1 z");
+                        let windowPoints = windowPath.map((p) => [p.x*wallLine.length(), p.y*wallHeight]);
+                        windowPoints.slice(1).reverse();
+                        let windowPoly = JSCad.modeling.primitives.polygon({ points: windowPoints })
+
+                        let window3D = JSCad.modeling.extrusions.extrudeLinear({height: wallThickness}, windowPoly);
+                        let wallWithoutWindow = JSCad.modeling.booleans.subtract(straightWall, window3D);
+
+                        //rotate the wall on Y axis
+                        let angle = Math.atan2(wallLine.y, wallLine.x)
+                        let rotatedWall = JSCad.modeling.transforms.rotateY(angle, wallWithoutWindow);
+
+                        let vertices = [];
+                    }
+                    catch(e) {
+                        let errorString = e.toString();
+                        console.assert(false, "substract error: "+e);
+                    }
+
+                    return { verts: verts, normals: normals, uvs: uvs, indices: indices }
+                }
+            }
+
             materials: [ PrincipledMaterial { baseColor: "white"; roughness: 0 },
                          PrincipledMaterial { baseColor: "white" },
                          PrincipledMaterial { baseColor: leftSideColor },

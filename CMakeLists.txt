@@ -48,7 +48,10 @@ qt_add_qml_module(appsh3d_viewer_qml
         qml/js/earcut.js
         qml/js/LightsManager.js
         resources/default.mtl
-        resources/light-sphere.obj
+        qml/js/jscad-modeling.min.js
+        qml/js/parseSvgPathData.min.js
+        qml/js/.qmllint.ini
+
 
     #RESOURCES resources/lake_pier_1k.hdr
     #RESOURCES resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr
