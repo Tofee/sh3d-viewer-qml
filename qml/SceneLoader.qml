@@ -13,7 +13,7 @@ Item {
     id: root
 
     // performance reason
-    property bool useOnlyDirectionalLight: false
+    property bool useOnlyDirectionalLight: false || lightModel.count===0
 
     HomeModel {
         id: homeModel
@@ -23,6 +23,9 @@ Item {
     }
     RoomModel {
         id: roomModel
+    }
+    DoorModel {
+        id: doorModel
     }
     FurnitureModel {
         id: furnitureModel
@@ -185,6 +188,31 @@ Item {
             }
         }
 
+        // ----- Furniture (Doors/Windows) ------------------------------------------------
+        Repeater3D {
+            model: doorModel
+            delegate: FurnitureDelegate {
+                furnitureSource: "sh3d:/"+model.modelFile
+
+                materialModel: MaterialModel {
+                    queryId: model.id
+                    parentTag: "doorOrWindow"
+
+                    Component.onCompleted: loadElementsFromDocumentWithQuery()
+                }
+
+                modelAngle: model.angle
+                modelPitch: model.pitch
+                modelRoll: model.roll
+                modelX: model.x
+                modelY: model.y
+                modelHeight: model.height
+                modelWidth: model.width
+                modelDepth: model.depth
+                modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
+                modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
+            }
+        }
 
         // ----- Lights ---------------------------------------------------
         Repeater3D {

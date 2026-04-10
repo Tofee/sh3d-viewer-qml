@@ -4,6 +4,7 @@ import QtQuick3D.Helpers
 
 import "../js/jscad-modeling.min.js" as JSCad
 import "../js/parseSvgPathData.min.js" as ParseSVG
+import "../js/earcut.js" as EarCut
 
 Loader3D {
     property real xStart
@@ -180,6 +181,39 @@ Loader3D {
                         //rotate the wall on Y axis
                         let angle = Math.atan2(wallLine.y, wallLine.x)
                         let rotatedWall = JSCad.modeling.transforms.rotateY(angle, wallWithoutWindow);
+
+                        // snap to grid and convert to triangles
+                        const polygons = JSCad.modeling.geometries.geom3.toPolygons(rotatedWall);
+
+                        let leftWallSidePoly;
+                        for (let poly_i in polygons) {
+                            let plane_i = polygons[poly_i].plane
+                            let plane_normal = Qt.vector3d(plane_i[0],plane_i[1],plane_i[2]);
+
+                            if (plane_normal.dotProduct(wallPerpendicularVector) > 0.99) {
+                                leftWallSidePoly = polygons[poly_i];
+                                break;
+                            }
+                        }
+                        let data = leftWallSidePoly.vertices.flat();
+                        //earcut only works on the dimensions x and y, whatever we give it
+                        //so if polygon's normal is along X, eliminate X by shifting the array by one
+                        let plane_normal = Qt.vector3d(Math.abs(leftWallSidePoly.plane[0]),leftWallSidePoly.plane[1],leftWallSidePoly.plane[2]);
+                        if (plane_normal.fuzzyEquals(Qt.vector3d(1,0,0)))
+                        {
+                            data.push(data.shift()); // rotate one element
+                        }
+                        const triangles = EarCut.earcut(data, null, 3);
+                        // determine the polygon having the most vertices, and whose normal is aligned with wallPerpendicularVector
+                        //  -> mesh it with earcut
+                        //  -> add its vertices and triangles to the list, normals should be wallPerpendicularVector.normalized()
+                        // determine the second polygon with most vertices, normal opposite to wallPerpendicularVector
+                        //  -> mesh it with earcut
+                        //  -> add its vertices and triangles to the list, normals should be -wallPerpendicularVector.normalized()
+                        // now for the rest of polygons:
+                        //  -> mesh it with earcut
+                        //  -> add vertices and triangles to the list, with normals given per polygon
+
 
                         let vertices = [];
                     }
