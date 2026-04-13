@@ -145,19 +145,52 @@ Loader3D {
 */
             // Simple rectangular cube for a wall
             geometry: ProceduralMesh {
-                id: arcWallMesh
-                property int  nbPoints: 10
-                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height, nbPoints)
+                id: straightWallMesh
+                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height)
                 positions: meshArrays.verts
                 normals: meshArrays.normals
-                uv0s: meshArrays.uvs
+               // uv0s: meshArrays.uvs
                 indexes: meshArrays.indices
 
-                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real, nbPoints: int): variant {
-                    let verts = []
-                    let normals = []
-                    let uvs = []
-                    let indices = []
+                function _retrieveWallSideData(wallPolygons: variant, wantedWallNormal: vector3d): variant {
+                    for (let poly_i in wallPolygons) {
+                        if (wallPolygons[poly_i].vertices.length<3) continue;
+                        let polyEdge1 = Qt.vector3d(...wallPolygons[poly_i].vertices[1]).minus(Qt.vector3d(...wallPolygons[poly_i].vertices[0]));
+                        let polyEdge2 = Qt.vector3d(...wallPolygons[poly_i].vertices[2]).minus(Qt.vector3d(...wallPolygons[poly_i].vertices[1]));
+                        const wallSidePolyNormal = polyEdge1.crossProduct(polyEdge2).normalized();
+
+                        if (wallSidePolyNormal.dotProduct(wantedWallNormal) > 0.99) {
+                            return {
+                                polygon: wallPolygons[poly_i],
+                                normal: wallSidePolyNormal
+                            };
+                        }
+                    }
+                    return null;
+                }
+                function _addWallSide(wallSide: variant, indices: variant, verts: variant, normals: variant) {
+                    const existingVertsLength = verts.length;
+                    let data = wallSide.polygon.vertices.flat();
+                    //earcut only works on the dimensions x and y, whatever we give it
+                    //so if polygon's normal is along X, eliminate X by shifting the array by one
+                    if (wallSide.normal.fuzzyEquals(Qt.vector3d(1,0,0)) || wallSide.normal.fuzzyEquals(Qt.vector3d(-1,0,0)))
+                    {
+                        data.push(data.shift()); // rotate one element
+                    }
+                    const triangles = EarCut.earcut(data, null, 3);
+                    indices.push(...triangles.map(i=>(i+existingVertsLength)));
+
+                    for (let i in wallSide.polygon.vertices) {
+                        verts.push(Qt.vector3d(wallSide.polygon.vertices[i][0],wallSide.polygon.vertices[i][1],wallSide.polygon.vertices[i][2]));
+                        normals.push(wallSide.normal);
+                    }
+                }
+
+                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real): variant {
+                    let _verts = []
+                    let _normals = []
+                    let _uvs = []
+                    let _indices = []
                     let i = 0;
 
                     let wallLine = vec3_Y_UP(xEnd-xStart, yEnd-yStart, 0);
@@ -176,72 +209,48 @@ Loader3D {
                         let windowPoly = JSCad.modeling.primitives.polygon({ points: windowPoints })
 
                         let window3D = JSCad.modeling.extrusions.extrudeLinear({height: wallThickness}, windowPoly);
-                        let wallWithoutWindow = JSCad.modeling.booleans.subtract(straightWall, window3D);
+//                        let wallWithoutWindow = JSCad.modeling.booleans.subtract(straightWall, window3D);
 
                         //rotate the wall on Y axis
-                        let angle = Math.atan2(wallLine.y, wallLine.x)
-                        let rotatedWall = JSCad.modeling.transforms.rotateY(angle, wallWithoutWindow);
+                        let angle = Math.atan2(wallLine.z, wallLine.x)
+                        let rotatedWall = JSCad.modeling.transforms.rotateY(angle, straightWall);
+
+                        // translate the wall to its correct position
+                        let positionedWall = JSCad.modeling.transforms.translate([(xStart + xEnd) / 2, wallHeight / 2, (yStart + yEnd) / 2], rotatedWall);
 
                         // snap to grid and convert to triangles
-                        const polygons = JSCad.modeling.geometries.geom3.toPolygons(rotatedWall);
+                        const polygons = JSCad.modeling.geometries.geom3.toPolygons(positionedWall);
 
-                        let leftWallSidePoly;
-                        for (let poly_i in polygons) {
-                            let plane_i = polygons[poly_i].plane
-                            let plane_normal = Qt.vector3d(plane_i[0],plane_i[1],plane_i[2]);
-
-                            if (plane_normal.dotProduct(wallPerpendicularVector) > 0.99) {
-                                leftWallSidePoly = polygons[poly_i];
-                                break;
-                            }
-                        }
-                        let data = leftWallSidePoly.vertices.flat();
-                        //earcut only works on the dimensions x and y, whatever we give it
-                        //so if polygon's normal is along X, eliminate X by shifting the array by one
-                        let plane_normal = Qt.vector3d(Math.abs(leftWallSidePoly.plane[0]),leftWallSidePoly.plane[1],leftWallSidePoly.plane[2]);
-                        if (plane_normal.fuzzyEquals(Qt.vector3d(1,0,0)))
-                        {
-                            data.push(data.shift()); // rotate one element
-                        }
-                        const triangles = EarCut.earcut(data, null, 3);
                         // determine the polygon having the most vertices, and whose normal is aligned with wallPerpendicularVector
                         //  -> mesh it with earcut
                         //  -> add its vertices and triangles to the list, normals should be wallPerpendicularVector.normalized()
+                        let foundWallSideLeft = _retrieveWallSideData(polygons, wallPerpendicularVector);
+                        if(foundWallSideLeft) {
+                            _addWallSide(foundWallSideLeft, _indices, _verts, _normals);
+                        }
                         // determine the second polygon with most vertices, normal opposite to wallPerpendicularVector
                         //  -> mesh it with earcut
                         //  -> add its vertices and triangles to the list, normals should be -wallPerpendicularVector.normalized()
+                        let foundWallSideRight = _retrieveWallSideData(polygons, wallPerpendicularVector.times(-1));
+                        if(foundWallSideRight) {
+                            _addWallSide(foundWallSideRight, _indices, _verts, _normals);
+                        }
                         // now for the rest of polygons:
                         //  -> mesh it with earcut
                         //  -> add vertices and triangles to the list, with normals given per polygon
-
-
-                        let vertices = [];
                     }
                     catch(e) {
                         let errorString = e.toString();
-                        console.assert(false, "substract error: "+e);
+                        console.warn(false, "generateWall error: "+e);
                     }
 
-                    return { verts: verts, normals: normals, uvs: uvs, indices: indices }
+                    return { verts: _verts, normals: _normals, uvs: _uvs, indices: _indices }
                 }
             }
 
-            materials: [ PrincipledMaterial { baseColor: "white"; roughness: 0 },
-                         PrincipledMaterial { baseColor: "white" },
-                         PrincipledMaterial { baseColor: leftSideColor },
+            materials: [ PrincipledMaterial { baseColor: leftSideColor },
                          PrincipledMaterial { baseColor: rightSideColor },
-                         PrincipledMaterial { baseColor: "white" },
                          PrincipledMaterial { baseColor: "white" } ]
-
-            // Compute centre + orientation from the two end points
-            property real dx: xEnd - xStart
-            property real dy: yEnd - yStart
-            property real length: Math.sqrt(dx * dx + dy * dy)
-            property real angle: Math.atan2(dy, dx) * 180 / Math.PI
-
-            position: vec3_Y_UP((xStart + xEnd) / 2, (yStart + yEnd) / 2, height / 2)
-            scale: vec3_Y_UP(length / 100, thickness / 100, height / 100)
-            eulerRotation: vec3_Y_UP(0, 0, angle)
         }
     }
 }
