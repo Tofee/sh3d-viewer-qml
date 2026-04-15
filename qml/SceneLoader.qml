@@ -112,6 +112,8 @@ Item {
                 arcExtent: model.arcExtent
                 leftSideColor: '#'+model.leftSideColor
                 rightSideColor: '#'+model.rightSideColor
+
+                doorCutOutsModel: doorModel.doorCutOutsModel
             }
         }
 
@@ -211,6 +213,15 @@ Item {
                 modelDepth: model.depth
                 modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
                 modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
+
+                Component.onCompleted: {
+                    doorModel.doorCutOutsModel.append( {  "modelHeight": modelHeight,
+                                                          "modelWidth": modelWidth,
+                                                          "modelDepth": modelDepth,
+                                                          "sceneTransform": sceneTransform,
+                                                          "cutOutSvgPath": model.cutOutShape
+                                                      } )
+                }
             }
         }
 

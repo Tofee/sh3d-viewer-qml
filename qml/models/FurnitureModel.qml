@@ -33,6 +33,7 @@ Sh3dXmlModel {
                              shininess: "0",
                              horizontallyRotatable: "true",
                              pitch: "0",
-                             roll: "0"
+                             roll: "0",
+                             cutOutShape: ""
                         })
 }

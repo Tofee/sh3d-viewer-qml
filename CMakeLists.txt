@@ -61,6 +61,7 @@ qt_add_qml_module(appsh3d_viewer_qml
 
     SOURCES src/Sh3dHomeModel.h src/Sh3dHomeModel.cpp
     SOURCES src/sh3druntimeloader.cpp src/sh3druntimeloader.h
+    QML_FILES qml/models/DoorCutOutsModel.qml
 )
 
 # Add include directories so target can find the QMLELEMENTS

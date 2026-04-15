@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
 
+import "../models"
+
 import "../js/jscad-modeling.min.js" as JSCad
 import "../js/parseSvgPathData.min.js" as ParseSVG
 import "../js/earcut.js" as EarCut
@@ -18,6 +20,33 @@ Loader3D {
     property color rightSideColor
 
     sourceComponent: (arcExtent && arcExtent>0) ? arcWallModel : simpleWallModel
+
+    property DoorCutOutsModel doorCutOutsModel
+    Instantiator {
+        id: doorCutOutsJSCAD
+        model: doorCutOutsModel
+        delegate: QtObject {
+            property variant jsCadDoorGeom3D: {
+                let windowPath = ParseSVG.parseSvgPathData(model.cutOutSvgPath);
+                let windowPoints = windowPath.map((p) => [p.x*model.modelWidth, p.y*model.modelDepth]);
+                windowPoints.slice(1).reverse();
+                let windowPoly = JSCad.modeling.primitives.polygon({ points: windowPoints })
+
+                let window3D = JSCad.modeling.extrusions.extrudeLinear({height: model.modelHeight}, windowPoly);
+
+                // Now apply the scene transformation on the window
+                const modelQtMat4 = model.sceneTransform
+                const sceneMat4 = JSCad.modeling.maths.mat4.fromValues(
+                        modelQtMat4.m11, modelQtMat4.m12, modelQtMat4.m13, modelQtMat4.m14,
+                        modelQtMat4.m21, modelQtMat4.m22, modelQtMat4.m23, modelQtMat4.m24,
+                        modelQtMat4.m31, modelQtMat4.m32, modelQtMat4.m33, modelQtMat4.m34,
+                        modelQtMat4.m41, modelQtMat4.m42, modelQtMat4.m43, modelQtMat4.m44
+                      )
+                let rotatedWindow = JSCad.modeling.transforms.transform(sceneMat4, window3D);
+                return rotatedWindow;
+            }
+        }
+    }
 
     property Component arcWallModelComp : Component {
         id: arcWallModel
@@ -146,7 +175,7 @@ Loader3D {
             // Simple rectangular cube for a wall
             geometry: ProceduralMesh {
                 id: straightWallMesh
-                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height)
+                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height, doorCutOutsJSCAD.count)
                 positions: meshArrays.verts
                 normals: meshArrays.normals
                // uv0s: meshArrays.uvs
@@ -186,7 +215,7 @@ Loader3D {
                     }
                 }
 
-                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real): variant {
+                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real, nbCutOuts: int): variant {
                     let _verts = []
                     let _normals = []
                     let _uvs = []
@@ -200,17 +229,6 @@ Loader3D {
                         // keep in mind that we are using "Y-Up" display, so height goes along Y
                         let straightWall = JSCad.modeling.primitives.cuboid({size: [wallLine.length(), wallHeight, wallThickness]})
 
-                        // TODO: translate the wall and/or the windows to the right positions !
-                        //       by default, JSCad objects are centered on the origin
-
-                        let windowPath = ParseSVG.parseSvgPathData("M0,0 v1 h1 v-1 z");
-                        let windowPoints = windowPath.map((p) => [p.x*wallLine.length(), p.y*wallHeight]);
-                        windowPoints.slice(1).reverse();
-                        let windowPoly = JSCad.modeling.primitives.polygon({ points: windowPoints })
-
-                        let window3D = JSCad.modeling.extrusions.extrudeLinear({height: wallThickness}, windowPoly);
-//                        let wallWithoutWindow = JSCad.modeling.booleans.subtract(straightWall, window3D);
-
                         //rotate the wall on Y axis
                         let angle = Math.atan2(wallLine.z, wallLine.x)
                         let rotatedWall = JSCad.modeling.transforms.rotateY(angle, straightWall);
@@ -218,8 +236,14 @@ Loader3D {
                         // translate the wall to its correct position
                         let positionedWall = JSCad.modeling.transforms.translate([(xStart + xEnd) / 2, wallHeight / 2, (yStart + yEnd) / 2], rotatedWall);
 
+                        let wallWithoutWindow = positionedWall;
+                        for( i=0; i<nbCutOuts; ++i) {
+                            let cutOutGeom = doorCutOutsJSCAD.objectAt(i).jsCadDoorGeom3D;
+                            wallWithoutWindow = JSCad.modeling.booleans.subtract(wallWithoutWindow, cutOutGeom);
+                        }
+
                         // snap to grid and convert to triangles
-                        const polygons = JSCad.modeling.geometries.geom3.toPolygons(positionedWall);
+                        const polygons = JSCad.modeling.geometries.geom3.toPolygons(wallWithoutWindow);
 
                         // determine the polygon having the most vertices, and whose normal is aligned with wallPerpendicularVector
                         //  -> mesh it with earcut
