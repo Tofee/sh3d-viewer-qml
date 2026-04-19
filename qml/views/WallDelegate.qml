@@ -4,9 +4,9 @@ import QtQuick3D.Helpers
 
 import "../models"
 
-import "../js/jscad-modeling.min.js" as JSCad
-import "../js/parseSvgPathData.min.js" as ParseSVG
+import "../js/jscad-modeling.tofe.js" as JSCad
 import "../js/earcut.js" as EarCut
+import "../js/DoorAndWindowsManager.js" as DoorAndWindowsManager;
 
 Loader3D {
     property real xStart
@@ -20,33 +20,6 @@ Loader3D {
     property color rightSideColor
 
     sourceComponent: (arcExtent && arcExtent>0) ? arcWallModel : simpleWallModel
-
-    property DoorCutOutsModel doorCutOutsModel
-    Instantiator {
-        id: doorCutOutsJSCAD
-        model: doorCutOutsModel
-        delegate: QtObject {
-            property variant jsCadDoorGeom3D: {
-                let windowPath = ParseSVG.parseSvgPathData(model.cutOutSvgPath);
-                let windowPoints = windowPath.map((p) => [p.x*model.modelWidth, p.y*model.modelDepth]);
-                windowPoints.slice(1).reverse();
-                let windowPoly = JSCad.modeling.primitives.polygon({ points: windowPoints })
-
-                let window3D = JSCad.modeling.extrusions.extrudeLinear({height: model.modelHeight}, windowPoly);
-
-                // Now apply the scene transformation on the window
-                const modelQtMat4 = model.sceneTransform
-                const sceneMat4 = JSCad.modeling.maths.mat4.fromValues(
-                        modelQtMat4.m11, modelQtMat4.m12, modelQtMat4.m13, modelQtMat4.m14,
-                        modelQtMat4.m21, modelQtMat4.m22, modelQtMat4.m23, modelQtMat4.m24,
-                        modelQtMat4.m31, modelQtMat4.m32, modelQtMat4.m33, modelQtMat4.m34,
-                        modelQtMat4.m41, modelQtMat4.m42, modelQtMat4.m43, modelQtMat4.m44
-                      )
-                let rotatedWindow = JSCad.modeling.transforms.transform(sceneMat4, window3D);
-                return rotatedWindow;
-            }
-        }
-    }
 
     property Component arcWallModelComp : Component {
         id: arcWallModel
@@ -175,52 +148,65 @@ Loader3D {
             // Simple rectangular cube for a wall
             geometry: ProceduralMesh {
                 id: straightWallMesh
-                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height, doorCutOutsJSCAD.count)
+                property var meshArrays: generateWall(xStart, yStart, xEnd, yEnd, thickness, height)
                 positions: meshArrays.verts
                 normals: meshArrays.normals
-               // uv0s: meshArrays.uvs
+                uv0s: meshArrays.uvs
                 indexes: meshArrays.indices
+                subsets: [
+                    ProceduralMeshSubset { count: straightWallMesh.meshArrays.nbIndicesSideLeft; offset: 0 },  /* left */
+                    ProceduralMeshSubset { count: straightWallMesh.meshArrays.nbIndicesSideRight; offset: straightWallMesh.meshArrays.nbIndicesSideLeft }
+                ]
 
                 function _retrieveWallSideData(wallPolygons: variant, wantedWallNormal: vector3d): variant {
-                    for (let poly_i in wallPolygons) {
-                        if (wallPolygons[poly_i].vertices.length<3) continue;
+                    let wallPolygonsIndices = [];
+                    for (let poly_i=0; poly_i<wallPolygons.length; ++poly_i) {
+                        if (!wallPolygons[poly_i].vertices || wallPolygons[poly_i].vertices.length<3) continue;
                         let polyEdge1 = Qt.vector3d(...wallPolygons[poly_i].vertices[1]).minus(Qt.vector3d(...wallPolygons[poly_i].vertices[0]));
                         let polyEdge2 = Qt.vector3d(...wallPolygons[poly_i].vertices[2]).minus(Qt.vector3d(...wallPolygons[poly_i].vertices[1]));
                         const wallSidePolyNormal = polyEdge1.crossProduct(polyEdge2).normalized();
 
                         if (wallSidePolyNormal.dotProduct(wantedWallNormal) > 0.99) {
-                            return {
-                                polygon: wallPolygons[poly_i],
-                                normal: wallSidePolyNormal
-                            };
+                            wallPolygonsIndices.push(poly_i);
                         }
                     }
-                    return null;
+                    return wallPolygonsIndices;
                 }
-                function _addWallSide(wallSide: variant, indices: variant, verts: variant, normals: variant) {
+                function _addWallSide(wallPolygon: variant, wallNormal: vector3d, wallBBox: variant, indices: variant, verts: variant, normals: variant, uvs: variant) {
                     const existingVertsLength = verts.length;
-                    let data = wallSide.polygon.vertices.flat();
+                    let data = wallPolygon.vertices.flat();
                     //earcut only works on the dimensions x and y, whatever we give it
                     //so if polygon's normal is along X, eliminate X by shifting the array by one
-                    if (wallSide.normal.fuzzyEquals(Qt.vector3d(1,0,0)) || wallSide.normal.fuzzyEquals(Qt.vector3d(-1,0,0)))
+                    let normalOnX = (wallNormal.fuzzyEquals(Qt.vector3d(1,0,0)) || wallNormal.fuzzyEquals(Qt.vector3d(-1,0,0)));
+                    if (normalOnX)
                     {
                         data.push(data.shift()); // rotate one element
                     }
-                    const triangles = EarCut.earcut(data, null, 3);
+                    // let triangulatedPolygon = JSCad.modeling.modifiers.generalize({triangulate: true}, wallPolygon);
+                    let triangles = EarCut.earcut(data, null, 3);
                     indices.push(...triangles.map(i=>(i+existingVertsLength)));
 
-                    for (let i in wallSide.polygon.vertices) {
-                        verts.push(Qt.vector3d(wallSide.polygon.vertices[i][0],wallSide.polygon.vertices[i][1],wallSide.polygon.vertices[i][2]));
-                        normals.push(wallSide.normal);
+                    for (let i=0; i<wallPolygon.vertices.length; ++i) {
+                        verts.push(Qt.vector3d(wallPolygon.vertices[i][0],wallPolygon.vertices[i][1],wallPolygon.vertices[i][2]));
+                        normals.push(wallNormal);
+                        if (normalOnX) {
+                            uvs.push(Qt.vector2d((wallPolygon.vertices[i][2]-wallBBox[0][2])/(wallBBox[1][2]-wallBBox[0][2]),
+                                                 (wallPolygon.vertices[i][1]-wallBBox[0][1])/(wallBBox[1][1]-wallBBox[0][1])));
+                        } else {
+                            uvs.push(Qt.vector2d((wallPolygon.vertices[i][0]-wallBBox[0][0])/(wallBBox[1][0]-wallBBox[0][0]),
+                                                 (wallPolygon.vertices[i][1]-wallBBox[0][1])/(wallBBox[1][1]-wallBBox[0][1])));
+                        }
                     }
                 }
 
-                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real, nbCutOuts: int): variant {
+                function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real): variant {
                     let _verts = []
                     let _normals = []
                     let _uvs = []
                     let _indices = []
                     let i = 0;
+                    let _nbIndicesSideLeft = 0;
+                    let _nbIndicesSideRight = 0;
 
                     let wallLine = vec3_Y_UP(xEnd-xStart, yEnd-yStart, 0);
                     let wallPerpendicularVector = vec3_Y_UP(0, 0, 1).crossProduct(wallLine.normalized());
@@ -237,10 +223,14 @@ Loader3D {
                         let positionedWall = JSCad.modeling.transforms.translate([(xStart + xEnd) / 2, wallHeight / 2, (yStart + yEnd) / 2], rotatedWall);
 
                         let wallWithoutWindow = positionedWall;
-                        for( i=0; i<nbCutOuts; ++i) {
-                            let cutOutGeom = doorCutOutsJSCAD.objectAt(i).jsCadDoorGeom3D;
-                            wallWithoutWindow = JSCad.modeling.booleans.subtract(wallWithoutWindow, cutOutGeom);
+                        console.log("wall: "+xStart+","+yStart+"->"+xEnd+","+yEnd);
+
+                        const listCutOutDoorOrWindow = DoorAndWindowsManager.getListCutOutDoorOrWindow();
+                        for( i=0; i<listCutOutDoorOrWindow.length; ++i) {
+                            wallWithoutWindow = JSCad.modeling.booleans.subtract(wallWithoutWindow, listCutOutDoorOrWindow[i]);
                         }
+
+                        const wallBBox = JSCad.modeling.measurements.measureBoundingBox(wallWithoutWindow);
 
                         // snap to grid and convert to triangles
                         const polygons = JSCad.modeling.geometries.geom3.toPolygons(wallWithoutWindow);
@@ -248,17 +238,21 @@ Loader3D {
                         // determine the polygon having the most vertices, and whose normal is aligned with wallPerpendicularVector
                         //  -> mesh it with earcut
                         //  -> add its vertices and triangles to the list, normals should be wallPerpendicularVector.normalized()
-                        let foundWallSideLeft = _retrieveWallSideData(polygons, wallPerpendicularVector);
-                        if(foundWallSideLeft) {
-                            _addWallSide(foundWallSideLeft, _indices, _verts, _normals);
-                        }
+                        let foundWallIndicesSideLeft = _retrieveWallSideData(polygons, wallPerpendicularVector);
+                        foundWallIndicesSideLeft.forEach(idx => {
+                            _addWallSide(polygons[idx], wallPerpendicularVector, wallBBox, _indices, _verts, _normals, _uvs);
+                        });
+                        _nbIndicesSideLeft = _indices.length;
+
                         // determine the second polygon with most vertices, normal opposite to wallPerpendicularVector
                         //  -> mesh it with earcut
                         //  -> add its vertices and triangles to the list, normals should be -wallPerpendicularVector.normalized()
-                        let foundWallSideRight = _retrieveWallSideData(polygons, wallPerpendicularVector.times(-1));
-                        if(foundWallSideRight) {
-                            _addWallSide(foundWallSideRight, _indices, _verts, _normals);
-                        }
+                        let foundWallIndicesSideRight = _retrieveWallSideData(polygons, wallPerpendicularVector.times(-1));
+                        foundWallIndicesSideRight.forEach(idx => {
+                            _addWallSide(polygons[idx], wallPerpendicularVector.times(-1), wallBBox, _indices, _verts, _normals, _uvs);
+                        });
+                        _nbIndicesSideRight = _indices.length - _nbIndicesSideLeft;
+
                         // now for the rest of polygons:
                         //  -> mesh it with earcut
                         //  -> add vertices and triangles to the list, with normals given per polygon
@@ -268,7 +262,7 @@ Loader3D {
                         console.warn(false, "generateWall error: "+e);
                     }
 
-                    return { verts: _verts, normals: _normals, uvs: _uvs, indices: _indices }
+                    return { verts: _verts, normals: _normals, uvs: _uvs, indices: _indices, nbIndicesSideLeft: _nbIndicesSideLeft, nbIndicesSideRight: _nbIndicesSideRight}
                 }
             }
 

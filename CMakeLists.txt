@@ -47,8 +47,9 @@ qt_add_qml_module(appsh3d_viewer_qml
     RESOURCES
         qml/js/earcut.js
         qml/js/LightsManager.js
+        qml/js/DoorAndWindowsManager.js
         resources/default.mtl
-        qml/js/jscad-modeling.min.js
+        qml/js/jscad-modeling.tofe.js
         qml/js/parseSvgPathData.min.js
         qml/js/.qmllint.ini
 
@@ -61,7 +62,7 @@ qt_add_qml_module(appsh3d_viewer_qml
 
     SOURCES src/Sh3dHomeModel.h src/Sh3dHomeModel.cpp
     SOURCES src/sh3druntimeloader.cpp src/sh3druntimeloader.h
-    QML_FILES qml/models/DoorCutOutsModel.qml
+    QML_FILES
 )
 
 # Add include directories so target can find the QMLELEMENTS

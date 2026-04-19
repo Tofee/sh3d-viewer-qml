@@ -34,6 +34,10 @@ function earcut(data, holeIndices, dim = 2) {
 
     earcutLinked(outerNode, triangles, dim, minX, minY, invSize, 0);
 
+    // make sure we don't change the clockwise orientation of the triangles fro the input polygon
+    if (signedArea(data, 0, outerLen, dim) < 0)
+        triangles.reverse();
+
     return triangles;
 }
 

@@ -9,6 +9,10 @@ import "."
 import "views"
 import "models"
 
+import "js/jscad-modeling.tofe.js" as JSCad
+import "js/parseSvgPathData.min.js" as ParseSVG
+import "js/DoorAndWindowsManager.js" as DoorAndWindowsManager;
+
 Item {
     id: root
 
@@ -63,6 +67,9 @@ Item {
         id: mainView3D
         anchors.fill: parent
         environment: SceneEnvironment {
+            debugSettings: DebugSettings {
+             //   materialOverride: DebugSettings.Normals
+            }
             antialiasingMode: SceneEnvironment.MSAA
             backgroundMode: SceneEnvironment.SkyBox
             lightProbe: Texture { source: "qrc:///qt/qml/resources/little_paris_eiffel_tower_2k.hdr" }
@@ -101,6 +108,8 @@ Item {
 */
         // ----- Walls ----------------------------------------------------
         Repeater3D {
+            id: wallRepeater3D
+            property bool areCutOutDoorOrWindowsReady: false
             model: wallModel
             delegate: WallDelegate {
                 xStart: model.xStart
@@ -113,7 +122,7 @@ Item {
                 leftSideColor: '#'+model.leftSideColor
                 rightSideColor: '#'+model.rightSideColor
 
-                doorCutOutsModel: doorModel.doorCutOutsModel
+                active: wallRepeater3D.areCutOutDoorOrWindowsReady
             }
         }
 
@@ -215,12 +224,8 @@ Item {
                 modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
 
                 Component.onCompleted: {
-                    doorModel.doorCutOutsModel.append( {  "modelHeight": modelHeight,
-                                                          "modelWidth": modelWidth,
-                                                          "modelDepth": modelDepth,
-                                                          "sceneTransform": sceneTransform,
-                                                          "cutOutSvgPath": model.cutOutShape
-                                                      } )
+                    DoorAndWindowsManager.addDoorOrWindowCutOut(model.cutOutShape, sceneTransform, JSCad, ParseSVG);
+                    if (DoorAndWindowsManager.getListCutOutDoorOrWindow().length == doorModel.count) wallRepeater3D.areCutOutDoorOrWindowsReady = true;
                 }
             }
         }
