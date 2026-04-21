@@ -89,7 +89,7 @@ Model {
                                                                accArray.push(Number(roomPoint.x), Number(roomPoint.y));
                                                                return accArray;
                                                            }, [])
-            const earcutIndices = EarCut.earcut(flatRoomPointsArray);
+            const earcutIndices = EarCut.earcut(flatRoomPointsArray, null, 2, true);
 
             // Create the indices. We want 3 sub meshes: above, below, and whole border
             // Adjust order to be counter-clockwise
