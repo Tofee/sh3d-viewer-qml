@@ -155,7 +155,8 @@ Loader3D {
                 indexes: meshArrays.indices
                 subsets: [
                     ProceduralMeshSubset { count: straightWallMesh.meshArrays.nbIndicesSideLeft; offset: 0 },  /* left */
-                    ProceduralMeshSubset { count: straightWallMesh.meshArrays.nbIndicesSideRight; offset: straightWallMesh.meshArrays.nbIndicesSideLeft }
+                    ProceduralMeshSubset { count: straightWallMesh.meshArrays.nbIndicesSideRight; offset: straightWallMesh.meshArrays.nbIndicesSideLeft },
+                    ProceduralMeshSubset { count: straightWallMesh.meshArrays.nbIndicesSideOther; offset: straightWallMesh.meshArrays.nbIndicesSideLeft+straightWallMesh.meshArrays.nbIndicesSideRight }
                 ]
 
                 function _retrieveWallSideData(wallPolygons: variant, wantedWallNormal: vector3d): variant {
@@ -199,6 +200,23 @@ Loader3D {
                     }
                 }
 
+                function _canIntersect(geomBBox1, geomBBox2) {
+                    const minIntersect = {
+                        x: Math.max(geomBBox1[0][0], geomBBox2[0][0]),
+                        y: Math.max(geomBBox1[0][1], geomBBox2[0][1]),
+                        z: Math.max(geomBBox1[0][2], geomBBox2[0][2])
+                    }
+                    const maxIntersect = {
+                        x: Math.min(geomBBox1[1][0], geomBBox2[1][0]),
+                        y: Math.min(geomBBox1[1][1], geomBBox2[1][1]),
+                        z: Math.min(geomBBox1[1][2], geomBBox2[1][2])
+                    }
+                    // Intersection if volume is positive
+                    return (maxIntersect.x > minIntersect.x &&
+                            maxIntersect.y > minIntersect.y &&
+                            maxIntersect.z > minIntersect.z);
+                }
+
                 function generateWall(xStart: real, yStart: real, xEnd: real, yEnd: real, wallThickness: real, wallHeight: real): variant {
                     let _verts = []
                     let _normals = []
@@ -223,14 +241,18 @@ Loader3D {
                         let positionedWall = JSCad.modeling.transforms.translate([(xStart + xEnd) / 2, wallHeight / 2, (yStart + yEnd) / 2], rotatedWall);
 
                         let wallWithoutWindow = positionedWall;
-                        console.log("wall: "+xStart+","+yStart+"->"+xEnd+","+yEnd);
+                        //console.log("wall: "+xStart+","+yStart+" -> "+xEnd+","+yEnd);
 
                         const listCutOutDoorOrWindow = DoorAndWindowsManager.getListCutOutDoorOrWindow();
-                        for( i=0; i<listCutOutDoorOrWindow.length; ++i) {
-                            wallWithoutWindow = JSCad.modeling.booleans.subtract(wallWithoutWindow, listCutOutDoorOrWindow[i]);
-                        }
 
                         const wallBBox = JSCad.modeling.measurements.measureBoundingBox(wallWithoutWindow);
+                        const cutOutsBBox = JSCad.modeling.measurements.measureBoundingBox(...listCutOutDoorOrWindow);
+
+                        for( i=0; i<listCutOutDoorOrWindow.length; ++i) {
+                            // test intersection of bounding boxes first, as we often get a crash when substracting non intersecting geometries
+                            if (!_canIntersect(wallBBox, cutOutsBBox[i])) continue;
+                            wallWithoutWindow = JSCad.modeling.booleans.subtract(wallWithoutWindow, listCutOutDoorOrWindow[i]);
+                        }
 
                         // snap to grid and convert to triangles
                         const polygons = JSCad.modeling.geometries.geom3.toPolygons(wallWithoutWindow);
@@ -256,13 +278,29 @@ Loader3D {
                         // now for the rest of polygons:
                         //  -> mesh it with earcut
                         //  -> add vertices and triangles to the list, with normals given per polygon
+                        [ wallLine.normalized(),           /* front */
+                          wallLine.normalized().times(-1), /* back  */
+                          vec3_Y_UP(0, 0,  1),             /* above */
+                          vec3_Y_UP(0, 0, -1) ]            /* below */
+                        .forEach(sideNormal => {
+                            let foundWallIndicesSideOther = _retrieveWallSideData(polygons, sideNormal);
+                            console.log("Wall normal: "+sideNormal+" foundWallIndicesSideOther: "+foundWallIndicesSideOther);
+                            foundWallIndicesSideOther.forEach(idx => {
+                                _addWallSide(polygons[idx], sideNormal, wallBBox, _indices, _verts, _normals, _uvs);
+                            });
+                        });
+                        console.log(".. done");
                     }
                     catch(e) {
                         let errorString = e.toString();
                         console.warn(false, "generateWall error: "+e);
                     }
 
-                    return { verts: _verts, normals: _normals, uvs: _uvs, indices: _indices, nbIndicesSideLeft: _nbIndicesSideLeft, nbIndicesSideRight: _nbIndicesSideRight}
+                    return { verts: _verts, normals: _normals, uvs: _uvs, indices: _indices,
+                             nbIndicesSideLeft: _nbIndicesSideLeft,
+                             nbIndicesSideRight: _nbIndicesSideRight,
+                             nbIndicesSideOther: _indices.length-_nbIndicesSideLeft-_nbIndicesSideRight
+                           }
                 }
             }
 

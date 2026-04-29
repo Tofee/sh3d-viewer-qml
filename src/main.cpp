@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
     //  - in .obj files, add a header line with "usemtl :/resources/default.mtl" which will hopefully become the actual default.mtl file content
     //  - process all obj and dae file to build a map { index->texture_name } for each 3D model file
 
+    QFile::copy(":/resources/default.mtl", tmpAssetDirPath + "/default.mtl");
+
     // First, find all the pointed models in Home.xml
     QStringList listModelUsed;
     QFile xmlModelFile(tmpAssetDirPath + "/Home.xml");
@@ -128,7 +130,7 @@ int main(int argc, char *argv[])
 
                         if (QString(fullObjContent).contains("usemtl", Qt::CaseSensitive)) {
                             if (resFile.open(QIODeviceBase::WriteOnly /*this will empty the file*/)) {
-                                resFile.write("mtllib :/resources/default.mtl\n");
+                                resFile.write(QString("mtllib " + tmpAssetDirPath + "/default.mtl\n").toLatin1());
                                 resFile.write(fullObjContent);
                                 resFile.close();
                             }

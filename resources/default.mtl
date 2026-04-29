@@ -656,6 +656,7 @@ newmtl flltgrey
 Ka 0.5224 0.5224 0.5224
 Kd 0.8245 0.8245 0.8245
 illum 1
+d 0.5000
 
 newmtl offwhite.warm
 Ka 0.5184 0.4501 0.3703

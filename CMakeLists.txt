@@ -20,7 +20,9 @@ qt_add_executable(appsh3d_viewer_qml
 )
 
 qt_add_resources(appsh3d_viewer_qml "assimpimporter_options"
-    FILES resources/assimpimporter_options.json)
+    FILES resources/assimpimporter_options.json
+          resources/default.mtl
+)
 
 qt_add_qml_module(appsh3d_viewer_qml
     URI sh3d_viewer_qml
@@ -48,7 +50,6 @@ qt_add_qml_module(appsh3d_viewer_qml
         qml/js/earcut.js
         qml/js/LightsManager.js
         qml/js/DoorAndWindowsManager.js
-        resources/default.mtl
         qml/js/jscad-modeling.tofe.js
         qml/js/parseSvgPathData.min.js
         qml/js/.qmllint.ini

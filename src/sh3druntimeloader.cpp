@@ -55,10 +55,13 @@ QStringList SH3DRuntimeLoader::supportedExtensions()
     if (!extensions.isEmpty())
         return extensions;
 
+    /// TOFE PATCH [begin]
     static const QStringList supportedExtensions = { QLatin1StringView("obj"),
                                                      QLatin1StringView("gltf"),
                                                      QLatin1StringView("glb"),
+                                                     QLatin1StringView("dae"),
                                                      QLatin1StringView("3ds")};
+    /// TOFE PATCH [end]
 
     QSSGAssetImportManager importManager;
     const auto types = importManager.getImporterPluginInfos();
@@ -137,6 +140,8 @@ void SH3DRuntimeLoader::loadSource()
         return;
     }
 
+    /// TOFE PATCH [begin]
+    /* Load custom options, to be able to disable the material deduplication */
     QJsonObject customOptions;
     QFile optionFile(":/resources/assimpimporter_options.json");
     if (optionFile.open(QIODevice::ReadOnly)) {
@@ -144,22 +149,50 @@ void SH3DRuntimeLoader::loadSource()
         auto optionsDocument = QJsonDocument::fromJson(options);
         customOptions = optionsDocument.object();
     }
+    /// TOFE PATCH [end]
 
     QSSGAssetImportManager importManager;
     QSSGSceneDesc::Scene scene;
     QString error(QStringLiteral("Unknown error"));
     auto result = importManager.importFile(m_source, scene, customOptions, &error);
 
+    /// TOFE PATCH [begin]
+    /*
+     * In Qt 6.11, the assimpimporter_rt.cpp code doesn't map the assimp opacity
+     *             of PrincipledMaterial nodes to their counterpart in the scane.
+     * So do it ourself, for the default materials we know about.
+     */
+    const QMap<QString, float> listDefaultOpacities = { { "amber_trans", 0.1600 },
+                                                        { "smoked_glass", 0.0200 },
+                                                        { "aqua_filter", 0.0200 },
+                                                        { "bluetint", 0.4300 },
+                                                        { "plasma", 0.2500 },
+                                                        { "emerald", 0.2500 },
+                                                        { "ruby", 0.2500 },
+                                                        { "sapphire", 0.2500 },
+                                                        { "shadow", 0.2500 },
+                                                        { "flltgrey", 0.5000 },
+                                                        { "glassblutint", 0.6700 },
+                                                        { "meh", 0.2500 },
+                                                        { "glasstransparent", 0.2500 },
+                                                        { "fleshtransparent", 0.2500 } };
+
     for (auto &node: scene.resources) {
         if (node->runtimeType == QSSGSceneDesc::Node::RuntimeType::PrincipledMaterial) {
             // Add this material
             m_materialNames.append(QString(node->name));
+            // Also, fix the opacity
+            if (listDefaultOpacities.contains(node->name)) {
+               QSSGSceneDesc::setProperty(*node, "opacity", &QQuick3DPrincipledMaterial::setOpacity, listDefaultOpacities[node->name]);
+            }
         }
         else if (node->runtimeType == QSSGSceneDesc::Node::RuntimeType::TextureData) {
             // Add this texture
         }
     }
+    /* We've registered all the materials' names, now the JS code can proceed to patch the custom textures */
     emit materialNamesChanged();
+    /// TOFE PATCH [end]
 
     switch (result) {
     case QSSGAssetImportManager::ImportState::Success:
