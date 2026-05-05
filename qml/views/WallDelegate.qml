@@ -179,12 +179,20 @@ Loader3D {
                     //earcut only works on the dimensions x and y, whatever we give it
                     //so if polygon's normal is along X, eliminate X by shifting the array by one
                     let normalOnX = (wallNormal.fuzzyEquals(Qt.vector3d(1,0,0)) || wallNormal.fuzzyEquals(Qt.vector3d(-1,0,0)));
+                    let normalOnY = (wallNormal.fuzzyEquals(Qt.vector3d(0,1,0)) || wallNormal.fuzzyEquals(Qt.vector3d(0,-1,0)));
+                    let dataXY = data;
                     if (normalOnX)
                     {
-                        data.push(data.shift()); // rotate one element
+                        // make earcut work on YZ
+                        dataXY = wallPolygon.vertices.map((vertex) => {return [vertex[1], vertex[2], vertex[0]]}).flat();
+                    }
+                    else if (normalOnY)
+                    {
+                        // make earcut work on ZX
+                        dataXY = wallPolygon.vertices.map((vertex) => {return [vertex[2], vertex[0], vertex[1]]}).flat();
                     }
                     // let triangulatedPolygon = JSCad.modeling.modifiers.generalize({triangulate: true}, wallPolygon);
-                    let triangles = EarCut.earcut(data, null, 3);
+                    let triangles = EarCut.earcut(dataXY, null, 3);
                     indices.push(...triangles.map(i=>(i+existingVertsLength)));
 
                     for (let i=0; i<wallPolygon.vertices.length; ++i) {
