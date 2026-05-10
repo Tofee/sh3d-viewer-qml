@@ -111,6 +111,7 @@ Item {
             id: wallRepeater3D
             property bool areCutOutDoorOrWindowsReady: false
             model: wallModel
+            delegateModelAccess: DelegateModel.ReadOnly
             delegate: WallDelegate {
                 xStart: model.xStart
                 xEnd: model.xEnd
@@ -129,6 +130,7 @@ Item {
         // ----- rooms (floor & ceiling)------------------------------------
         Repeater3D {
             model: roomModel
+            delegateModelAccess: DelegateModel.ReadOnly
             delegate: RoomDelegate {
                 roomPointsModel: RoomPointsModel {
                     queryRoomId: model.id
@@ -151,6 +153,7 @@ Item {
         // ----- Furniture ------------------------------------------------
         Repeater3D {
             model: furnitureModel
+            delegateModelAccess: DelegateModel.ReadOnly
             delegate: FurnitureDelegate {
                 furnitureSource: "sh3d:/"+model.modelFile
 
@@ -176,6 +179,7 @@ Item {
         // ----- Furniture (Shelves) ------------------------------------------------
         Repeater3D {
             model: shelfModel
+            delegateModelAccess: DelegateModel.ReadOnly
             delegate: FurnitureDelegate {
                 furnitureSource: "sh3d:/"+model.modelFile
 
@@ -202,6 +206,7 @@ Item {
         // ----- Furniture (Doors/Windows) ------------------------------------------------
         Repeater3D {
             model: doorModel
+            delegateModelAccess: DelegateModel.ReadOnly
             delegate: FurnitureDelegate {
                 furnitureSource: "sh3d:/"+model.modelFile
 
@@ -225,7 +230,7 @@ Item {
 
                 Component.onCompleted: {
                     DoorAndWindowsManager.addDoorOrWindowCutOut(model.cutOutShape, sceneTransform, JSCad, ParseSVG);
-                    if (DoorAndWindowsManager.getListCutOutDoorOrWindow().length == doorModel.count) wallRepeater3D.areCutOutDoorOrWindowsReady = true;
+                    if (DoorAndWindowsManager.getListCutOutDoorOrWindow().length === doorModel.count) wallRepeater3D.areCutOutDoorOrWindowsReady = true;
                 }
             }
         }
