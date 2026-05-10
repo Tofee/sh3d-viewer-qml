@@ -2,6 +2,26 @@
 
 var modeling = {};
 
+/* Fake WeakMap, to replace WeakMap in Qt/QML which is crashing too often.
+   Probably some mistake in the GC references handling, not sure, but I get
+   many SegFault with this backtrace:
+
+#0  0x00007ffff524276a in QV4::Value::isString (this=0x55555728f078) at /usr/src/debug/qt6-declarative/qtdeclarative/src/qml/jsruntime/qv4value_p.h:290
+#1  QV4::Value::stringValue (this=0x55555728f078, this=<optimized out>) at /usr/src/debug/qt6-declarative/qtdeclarative/src/qml/jsruntime/qv4value_p.h:59
+#2  QV4::Value::sameValueZero (this=0x55555728f078, other=...) at /usr/src/debug/qt6-declarative/qtdeclarative/src/qml/jsruntime/qv4value.cpp:248
+#3  0x00007ffff51bcc58 in QV4::ESTable::get (hasValue=0x0, this=<optimized out>, key=<optimized out>) at /usr/src/debug/qt6-declarative/qtdeclarative/src/qml/jsruntime/qv4estable.cpp:105
+#4  QV4::WeakMapPrototype::method_get (b=<optimized out>, thisObject=<optimized out>, argv=<optimized out>, argc=<optimized out>)
+    at /usr/src/debug/qt6-declarative/qtdeclarative/src/qml/jsruntime/qv4mapobject.cpp:195
+
+  This FakeMap doesn't store anything, i.e. there will be no cache handling in JSCad.
+*/
+class WeakMapFake {
+  constructor() {}
+  set(key, value) {}
+  get(key) { return null; }
+  has(key) { return false; }
+}
+
 if (!Array.prototype.flat) {
     function flattenArray(arrayToFlatten, depth) {
         let o=arrayToFlatten;
@@ -3367,7 +3387,7 @@ module.exports = measureBoundingBox
 },{"../../maths/vec3":223}],86:[function(require,module,exports){
 const vec4 = require('../../maths/vec4')
 
-const cache = new WeakMap()
+const cache = new WeakMapFake()
 
 /**
  * Measure the bounding sphere of the given polygon.
@@ -7880,7 +7900,7 @@ const geom3 = require('../geometries/geom3')
 const path2 = require('../geometries/path2')
 const poly3 = require('../geometries/poly3')
 
-const cache = new WeakMap()
+const cache = new WeakMapFake()
 
 /*
  * Measure the area of the given geometry.
@@ -7965,7 +7985,7 @@ const geom3 = require('../geometries/geom3')
 const path2 = require('../geometries/path2')
 const poly3 = require('../geometries/poly3')
 
-const cache = new WeakMap()
+const cache = new WeakMapFake()
 
 /*
  * Measure the min and max bounds of the given (path2) geometry.
@@ -8101,7 +8121,7 @@ const geom3 = require('../geometries/geom3')
 const path2 = require('../geometries/path2')
 const poly3 = require('../geometries/poly3')
 
-const cacheOfBoundingSpheres = new WeakMap()
+const cacheOfBoundingSpheres = new WeakMapFake()
 
 /*
  * Measure the bounding sphere of the given (path2) geometry.
@@ -8276,7 +8296,7 @@ const vec3 = require('../maths/vec3')
 const geom2 = require('../geometries/geom2')
 const geom3 = require('../geometries/geom3')
 
-const cacheOfCenterOfMass = new WeakMap()
+const cacheOfCenterOfMass = new WeakMapFake()
 
 /*
  * Measure the center of mass for the given geometry.
@@ -8464,7 +8484,7 @@ const geom3 = require('../geometries/geom3')
 const path2 = require('../geometries/path2')
 const poly3 = require('../geometries/poly3')
 
-const cache = new WeakMap()
+const cache = new WeakMapFake()
 
 /*
  * Measure the volume of the given geometry.
