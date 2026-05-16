@@ -17,7 +17,7 @@ Item {
     id: root
 
     // performance reason
-    property bool useOnlyDirectionalLight: false || lightModel.count===0
+    property bool useOnlyDirectionalLight: true || lightModel.count===0
 
     HomeModel {
         id: homeModel
@@ -47,7 +47,11 @@ Item {
                              var cam = cameraModel.get(0);
                              mainCamera.position = vec3_Y_UP(cam.x, cam.y, cam.z);
                              mainCamera.fieldOfView = cam.fieldOfView * 180 / Math.PI;
-                             mainCamera.eulerRotation = vec3_Y_UP(cam.yaw * 180 / Math.PI - 90, 0, 180 - cam.pitch * 180 / Math.PI);
+                             mainCamera.eulerRotation = vec3_Y_UP((cam.yaw * 180 / Math.PI - 90)%360, 0, 180 - cam.pitch * 180 / Math.PI);
+                             if (mainCamera.up.y < 0) {
+                                 console.log("Making sure camera is standing up");
+                                 mainCamera.lookAt(axisHelper);
+                             }
                          }
     }
 
@@ -72,9 +76,12 @@ Item {
             }
             antialiasingMode: SceneEnvironment.MSAA
             backgroundMode: SceneEnvironment.SkyBox
-            lightProbe: Texture { source: "qrc:///qt/qml/resources/little_paris_eiffel_tower_2k.hdr" }
+            lightProbe: Texture {
+                source: "qrc:///resources/little_paris_eiffel_tower_2k.hdr"
+            }
             tonemapMode: SceneEnvironment.TonemapModeLinear
             clearColor: "#6060A0"
+          //  adjustmentBrightness: 2
         }
 
         camera: PerspectiveCamera {
@@ -83,29 +90,28 @@ Item {
 
         DirectionalLight {
             color: "white"
-            brightness: 2
+            brightness: 0.5
             eulerRotation: Qt.vector3d(-80, -70, 0)
-            /*
-            use32BitShadowmap: true
+            shadowFactor: 10
+
+            use32BitShadowmap: false
             castsShadow: true
-            shadowFactor: 50
-            shadowMapQuality: DirectionalLight.ShadowMapQualityVeryHigh
+            shadowMapQuality: DirectionalLight.ShadowMapQualityLow
             csmNumSplits: 0
             lockShadowmapTexels: false
             softShadowQuality: Light.PCF32
-            pcfFactor: 2
-            */
+
             visible: useOnlyDirectionalLight
         }
 
         WasdController {
             controlledObject: mainCamera
         }
-/*
+
         AxisHelper {
             id: axisHelper
         }
-*/
+
         // ----- Walls ----------------------------------------------------
         Repeater3D {
             id: wallRepeater3D
@@ -229,7 +235,11 @@ Item {
                 modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
 
                 Component.onCompleted: {
-                    DoorAndWindowsManager.addDoorOrWindowCutOut(model.cutOutShape, sceneTransform, JSCad, ParseSVG);
+                    let cutOutShape = model.cutOutShape;
+                    if (model.cutOutShape === "" && model.wallCutOutOnBothSides === "true") {
+                        cutOutShape = "M0,0 v1 h1 v-1 z";
+                    }
+                    DoorAndWindowsManager.addDoorOrWindowCutOut(cutOutShape, sceneTransform, JSCad, ParseSVG);
                     if (DoorAndWindowsManager.getListCutOutDoorOrWindow().length === doorModel.count) wallRepeater3D.areCutOutDoorOrWindowsReady = true;
                 }
             }
@@ -238,6 +248,7 @@ Item {
         // ----- Lights ---------------------------------------------------
         Repeater3D {
             model: lightModel
+            delegateModelAccess: DelegateModel.ReadOnly
             delegate: LightDelegate {
                     property url undefined_url
                     furnitureSource: model.catalogId==='eTeks#halogenLightSource' ? undefined_url : ("sh3d:/"+model.modelFile)
@@ -270,30 +281,6 @@ Item {
                     useOnlyDirectionalLight: root.useOnlyDirectionalLight
                 }
         }
-/*
-        // ----- Doors & Windows (cutouts) --------------------------------
-        // For simplicity we just render them as thin boxes; a real app would
-        // subtract them from the wall geometry using a Boolean operation.
-        Repeater {
-            model: DoorModel
-            delegate: Model {
-                source: "#Cube"
-                materials: DefaultMaterial { diffuseColor: "#8b4513" }
-                // Position relative to the owning wall (wallId is ignored here)
-                position: Qt.vector3d(x, y, height/2)
-                scale: Qt.vector3d(width/1000, thickness/1000, height/1000)
-            }
-        }
 
-        Repeater {
-            model: WindowModel
-            delegate: Model {
-                source: "#Cube"
-                materials: DefaultMaterial { diffuseColor: "#87cefa"; opacity: 0.5 }
-                position: Qt.vector3d(x, y, height/2)
-                scale: Qt.vector3d(width/1000, thickness/1000, height/1000)
-            }
-        }
-        */
     }
 }

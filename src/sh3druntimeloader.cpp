@@ -185,6 +185,8 @@ void SH3DRuntimeLoader::loadSource()
             if (listDefaultOpacities.contains(node->name)) {
                QSSGSceneDesc::setProperty(*node, "opacity", &QQuick3DPrincipledMaterial::setOpacity, listDefaultOpacities[node->name]);
             }
+            QSSGSceneDesc::setProperty(*node, "metalness", &QQuick3DPrincipledMaterial::setMetalness, 0.1);
+            QSSGSceneDesc::setProperty(*node, "roughness", &QQuick3DPrincipledMaterial::setRoughness, 0.6);
         }
         else if (node->runtimeType == QSSGSceneDesc::Node::RuntimeType::TextureData) {
             // Add this texture

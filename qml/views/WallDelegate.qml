@@ -292,12 +292,10 @@ Loader3D {
                           vec3_Y_UP(0, 0, -1) ]            /* below */
                         .forEach(sideNormal => {
                             let foundWallIndicesSideOther = _retrieveWallSideData(polygons, sideNormal);
-                            console.log("Wall normal: "+sideNormal+" foundWallIndicesSideOther: "+foundWallIndicesSideOther);
                             foundWallIndicesSideOther.forEach(idx => {
                                 _addWallSide(polygons[idx], sideNormal, wallBBox, _indices, _verts, _normals, _uvs);
                             });
                         });
-                        console.log(".. done");
                     }
                     catch(e) {
                         let errorString = e.toString();
@@ -312,9 +310,9 @@ Loader3D {
                 }
             }
 
-            materials: [ PrincipledMaterial { baseColor: leftSideColor },
-                         PrincipledMaterial { baseColor: rightSideColor },
-                         PrincipledMaterial { baseColor: "white" } ]
+            materials: [ PrincipledMaterial { roughness: 0.8; metalness: 0; baseColor: leftSideColor },
+                         PrincipledMaterial { roughness: 0.8; metalness: 0; baseColor: rightSideColor },
+                         PrincipledMaterial { roughness: 1; metalness: 0; baseColor: "white" } ]
         }
     }
 }

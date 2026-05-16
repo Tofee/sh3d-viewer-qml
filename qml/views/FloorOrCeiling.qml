@@ -20,7 +20,9 @@ Model {
 */
     materials: [
         PrincipledMaterial {
-            baseColorMap: Texture {}
+            roughness: 0.6
+            metalness: 0.1
+            baseColorMap: Texture { }
             Component.onCompleted: {
                 let texturesOfMaterial = Sh3dHomeModel.runQuery("/room[@id='"+floorOrCeilingModel.roomId+"']/texture", "none");
                 if (texturesOfMaterial.length>0) {

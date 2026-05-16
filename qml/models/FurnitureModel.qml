@@ -34,6 +34,7 @@ Sh3dXmlModel {
                              horizontallyRotatable: "true",
                              pitch: "0",
                              roll: "0",
-                             cutOutShape: ""
+                             cutOutShape: "",
+                             wallCutOutOnBothSides: "false"
                         })
 }

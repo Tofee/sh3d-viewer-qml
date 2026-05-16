@@ -28,7 +28,7 @@ QUrl SH3DAssetUrlHandler::intercept(const QUrl& path, QQmlAbstractUrlInterceptor
             return QUrl::fromLocalFile(fi.filePath());
         }
         else {
-            printf("Couldn't fine %s !\n", fi.filePath().toLatin1().data());
+            printf("Couldn't find %s !\n", fi.filePath().toLatin1().data());
         }
     }
     return path;
