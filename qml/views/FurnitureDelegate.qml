@@ -20,6 +20,7 @@ Node {
     property real modelWidth
     property real modelDepth
     property real modelElevation: 0
+    property real levelElevation: 0
     property vector3d modelEulerRotation: Qt.vector3d(0,0,0)
 
     property MaterialModel materialModel
@@ -124,5 +125,5 @@ Node {
     // Apply furniture's rotation, scale and position
     eulerRotation: vec3_Y_UP(modelPitch, modelRoll, modelAngle).times(-180 / Math.PI)
     scale: vec3_Y_UP(modelWidth, modelDepth, modelHeight)
-    position: vec3_Y_UP(modelX, modelY, modelHeight/2 + modelElevation)
+    position: vec3_Y_UP(modelX, modelY, modelHeight/2 + modelElevation + levelElevation)
 }

@@ -6,12 +6,7 @@ import QtQuick3D.AssetUtils
 import QtQml.XmlListModel
 import QtQml.Models
 import "."
-import "views"
 import "models"
-
-import "js/jscad-modeling.tofe.js" as JSCad
-import "js/parseSvgPathData.min.js" as ParseSVG
-import "js/DoorAndWindowsManager.js" as DoorAndWindowsManager;
 
 Item {
     id: root
@@ -21,6 +16,9 @@ Item {
 
     HomeModel {
         id: homeModel
+    }
+    LevelModel {
+        id: levelModel
     }
     WallModel {
         id: wallModel
@@ -77,7 +75,7 @@ Item {
             antialiasingMode: SceneEnvironment.MSAA
             backgroundMode: SceneEnvironment.SkyBox
             lightProbe: Texture {
-                source: "qrc:///resources/little_paris_eiffel_tower_2k.hdr"
+                source: "qrc:///resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr"
             }
             tonemapMode: SceneEnvironment.TonemapModeLinear
             clearColor: "#6060A0"
@@ -112,175 +110,27 @@ Item {
             id: axisHelper
         }
 
-        // ----- Walls ----------------------------------------------------
-        Repeater3D {
-            id: wallRepeater3D
-            property bool areCutOutDoorOrWindowsReady: false
-            model: wallModel
-            delegateModelAccess: DelegateModel.ReadOnly
-            delegate: WallDelegate {
-                xStart: model.xStart
-                xEnd: model.xEnd
-                yStart: model.yStart
-                yEnd: model.yEnd
-                thickness: model.thickness
-                height: model.height
-                arcExtent: model.arcExtent
-                leftSideColor: '#'+model.leftSideColor
-                rightSideColor: '#'+model.rightSideColor
+        Loader3D {
+            source: "SceneViews.qml"
+            active: homeModel.initCompleted &&
+                    levelModel.initCompleted &&
+                    wallModel.initCompleted &&
+                    roomModel.initCompleted &&
+                    doorModel.initCompleted &&
+                    furnitureModel.initCompleted &&
+                    shelfModel.initCompleted &&
+                    lightModel.initCompleted &&
+                    cameraModel.initCompleted
 
-                active: wallRepeater3D.areCutOutDoorOrWindowsReady
-            }
+            property HomeModel homeModel: homeModel
+            property LevelModel levelModel: levelModel
+            property WallModel wallModel: wallModel
+            property RoomModel roomModel: roomModel
+            property DoorModel doorModel: doorModel
+            property FurnitureModel furnitureModel: furnitureModel
+            property ShelfModel shelfModel: shelfModel
+            property LightModel lightModel: lightModel
+            property CameraModel cameraModel: cameraModel
         }
-
-        // ----- rooms (floor & ceiling)------------------------------------
-        Repeater3D {
-            model: roomModel
-            delegateModelAccess: DelegateModel.ReadOnly
-            delegate: RoomDelegate {
-                roomPointsModel: RoomPointsModel {
-                    queryRoomId: model.id
-
-                    Component.onCompleted: loadElementsFromDocumentWithQuery()
-                }
-
-                roomId: model.id
-                floorVisible: model.floorVisible || model.areaVisible
-                floorColor: model.floorColor
-                floorShininess: model.floorShininess
-                ceilingVisible: model.ceilingVisible
-                ceilingColor: model.ceilingColor
-                ceilingShininess: model.ceilingShininess
-                ceilingFlat: model.ceilingFlat
-                roomPoints: roomModel.points
-            }
-        }
-
-        // ----- Furniture ------------------------------------------------
-        Repeater3D {
-            model: furnitureModel
-            delegateModelAccess: DelegateModel.ReadOnly
-            delegate: FurnitureDelegate {
-                furnitureSource: "sh3d:/"+model.modelFile
-
-                materialModel: MaterialModel {
-                    queryId: model.id
-                    parentTag: "pieceOfFurniture"
-
-                    Component.onCompleted: loadElementsFromDocumentWithQuery()
-                }
-
-                modelAngle: model.angle
-                modelPitch: model.pitch
-                modelRoll: model.roll
-                modelX: model.x
-                modelY: model.y
-                modelHeight: model.height
-                modelWidth: model.width
-                modelDepth: model.depth
-                modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
-                modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
-            }
-        }
-        // ----- Furniture (Shelves) ------------------------------------------------
-        Repeater3D {
-            model: shelfModel
-            delegateModelAccess: DelegateModel.ReadOnly
-            delegate: FurnitureDelegate {
-                furnitureSource: "sh3d:/"+model.modelFile
-
-                materialModel: MaterialModel {
-                    queryId: model.id
-                    parentTag: "shelfUnit"
-
-                    Component.onCompleted: loadElementsFromDocumentWithQuery()
-                }
-
-                modelAngle: model.angle
-                modelPitch: model.pitch
-                modelRoll: model.roll
-                modelX: model.x
-                modelY: model.y
-                modelHeight: model.height
-                modelWidth: model.width
-                modelDepth: model.depth
-                modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
-                modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
-            }
-        }
-
-        // ----- Furniture (Doors/Windows) ------------------------------------------------
-        Repeater3D {
-            model: doorModel
-            delegateModelAccess: DelegateModel.ReadOnly
-            delegate: FurnitureDelegate {
-                furnitureSource: "sh3d:/"+model.modelFile
-
-                materialModel: MaterialModel {
-                    queryId: model.id
-                    parentTag: "doorOrWindow"
-
-                    Component.onCompleted: loadElementsFromDocumentWithQuery()
-                }
-
-                modelAngle: model.angle
-                modelPitch: model.pitch
-                modelRoll: model.roll
-                modelX: model.x
-                modelY: model.y
-                modelHeight: model.height
-                modelWidth: model.width
-                modelDepth: model.depth
-                modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
-                modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
-
-                Component.onCompleted: {
-                    let cutOutShape = model.cutOutShape;
-                    if (model.cutOutShape === "" && model.wallCutOutOnBothSides === "true") {
-                        cutOutShape = "M0,0 v1 h1 v-1 z";
-                    }
-                    DoorAndWindowsManager.addDoorOrWindowCutOut(cutOutShape, sceneTransform, JSCad, ParseSVG);
-                    if (DoorAndWindowsManager.getListCutOutDoorOrWindow().length === doorModel.count) wallRepeater3D.areCutOutDoorOrWindowsReady = true;
-                }
-            }
-        }
-
-        // ----- Lights ---------------------------------------------------
-        Repeater3D {
-            model: lightModel
-            delegateModelAccess: DelegateModel.ReadOnly
-            delegate: LightDelegate {
-                    property url undefined_url
-                    furnitureSource: model.catalogId==='eTeks#halogenLightSource' ? undefined_url : ("sh3d:/"+model.modelFile)
-
-                    materialModel: MaterialModel {
-                        queryId: model.id
-                        parentTag: "light"
-
-                        Component.onCompleted: loadElementsFromDocumentWithQuery()
-                    }
-
-                    modelAngle: model.angle
-                    modelPitch: model.pitch
-                    modelRoll: model.roll
-                    modelX: model.x
-                    modelY: model.y
-                    modelHeight: model.height
-                    modelWidth: model.width
-                    modelDepth: model.depth
-                    modelElevation: (model.elevation || 0) // some furnitures don't have the elevation property
-                    modelEulerRotation: Sh3dHomeModel.getEulerAnglesFromRotationMatrix(model.modelRotation.split(' '));
-
-                    lightPower: model.power
-                    lightSourceModel: LightSourceModel {
-                        queryLightId: model.id
-
-                        Component.onCompleted: loadElementsFromDocumentWithQuery()
-                    }
-
-                    useOnlyDirectionalLight: root.useOnlyDirectionalLight
-                }
-        }
-
     }
 }

@@ -16,12 +16,14 @@ Node {
     property real ceilingShininess
     property real ceilingFlat
     property variant roomPoints
+    property real levelElevation: 0
 
     // Floor
     FloorOrCeiling {
         id: floorModel
         visible: roomNode.floorVisible
         roomPoints: roomPointsModel.allPoints
+        levelElevation: roomNode.levelElevation
 
         roomId: roomNode.roomId
     }

@@ -6,8 +6,9 @@ import sh3d_viewer_qml
 ListModel {
     id: sh3DXmlListModel
     property string query;
-    property string skipNode: "furnitureGroup";
-    property variant defaultInitValues;
+    property string skipNode: "furnitureGroup"
+    property variant defaultInitValues
+    property bool initCompleted: false
     signal loadModelCompleted;
 
     function loadElementsFromDocumentWithQuery() {
@@ -19,6 +20,7 @@ ListModel {
         }
 
         sh3DXmlListModel.loadModelCompleted();
+        sh3DXmlListModel.initCompleted = true;
     }
     function _addFoundChildToListModel(xmlElt: variant) {
         let o = {};

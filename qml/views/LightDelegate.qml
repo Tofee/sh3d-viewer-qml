@@ -20,6 +20,7 @@ Node {
     property alias modelElevation: lightDelegateShape.modelElevation
     property alias modelEulerRotation: lightDelegateShape.modelEulerRotation
     property alias materialModel: lightDelegateShape.materialModel
+    property alias levelElevation: lightDelegateShape.levelElevation
 
     property alias lightSourceModel: lightDelegateShape.lightSourceModel
     property alias lightPower: lightDelegateShape.lightPower
@@ -41,7 +42,7 @@ Node {
             position: lightDelegateShape.position.plus(
                                 vec3_Y_UP(lightDelegate.modelWidth*(model.x-0.5),
                                           lightDelegate.modelDepth*(model.y-0.5),
-                                          lightDelegate.modelHeight*(model.z-0.5)))
+                                          levelElevation+lightDelegate.modelHeight*(model.z-0.5)))
 
             sourceComponent: PointLight {
                 color: '#'+model.color

@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
 
+import "."
+
 import "../js/earcut.js" as EarCut
 
 Model {
@@ -9,6 +11,7 @@ Model {
     property real thickness: 10
     property variant roomPoints
     property int nbPoints: roomPoints ? roomPoints.length : 0
+    property real levelElevation: 0
 
     property string roomId
 /*
@@ -19,22 +22,10 @@ Model {
     }
 */
     materials: [
-        PrincipledMaterial {
+        MaterialOverloadedTexture {
             roughness: 0.6
             metalness: 0.1
-            baseColorMap: Texture { }
-            Component.onCompleted: {
-                let texturesOfMaterial = Sh3dHomeModel.runQuery("/room[@id='"+floorOrCeilingModel.roomId+"']/texture", "none");
-                if (texturesOfMaterial.length>0) {
-                    // only consider the first one
-                    if (texturesOfMaterial[0].hasOwnProperty('scale')) {
-                        baseColorMap.scaleU = texturesOfMaterial[0].scale;
-                        baseColorMap.scaleV = texturesOfMaterial[0].scale;
-                    }
-                    baseColor = "#ffffff";
-                    baseColorMap.source = "sh3d:/"+texturesOfMaterial[0].image;
-                }
-            }
+            textureLookupSelector: "/room[@id='"+floorOrCeilingModel.roomId+"']/texture"
         }
     ]
 
@@ -65,8 +56,8 @@ Model {
             let minExtent = Qt.vector2d(0,0);
 
             for (i = 0; i < roomPoints.length; ++i) {
-                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, -thickness)); //below
-                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, 0));          //above
+                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, levelElevation-thickness)); //below
+                verts.push(vec3_Y_UP(roomPoints[i].x, roomPoints[i].y, levelElevation));           //above
 
                 normals.push(vec3_Y_UP(0, 0, -1));
                 normals.push(vec3_Y_UP(0, 0, 1));

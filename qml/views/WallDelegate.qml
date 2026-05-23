@@ -3,6 +3,7 @@ import QtQuick3D
 import QtQuick3D.Helpers
 
 import "../models"
+import "."
 
 import "../js/jscad-modeling.tofe.js" as JSCad
 import "../js/earcut.js" as EarCut
@@ -18,6 +19,8 @@ Loader3D {
     property real arcExtent
     property color leftSideColor
     property color rightSideColor
+    property real levelElevation: 0
+    property string wallId
 
     sourceComponent: (arcExtent && arcExtent>0) ? arcWallModel : simpleWallModel
 
@@ -85,10 +88,10 @@ Loader3D {
                         let arcPointInside = posOriginArc.plus(rotatedRadiusVector.times((arcRadius-wallThickness/2)/arcRadius));
                         let arcPointOutside = posOriginArc.plus(rotatedRadiusVector.times((arcRadius+wallThickness/2)/arcRadius));
 
-                        verts.push(vec3_Y_UP(arcPointInside.x, arcPointInside.y, 0));
-                        verts.push(vec3_Y_UP(arcPointInside.x, arcPointInside.y, wallHeight));
-                        verts.push(vec3_Y_UP(arcPointOutside.x, arcPointOutside.y, wallHeight));
-                        verts.push(vec3_Y_UP(arcPointOutside.x, arcPointOutside.y, 0));
+                        verts.push(vec3_Y_UP(arcPointInside.x, arcPointInside.y, levelElevation));
+                        verts.push(vec3_Y_UP(arcPointInside.x, arcPointInside.y, levelElevation+wallHeight));
+                        verts.push(vec3_Y_UP(arcPointOutside.x, arcPointOutside.y, levelElevation+wallHeight));
+                        verts.push(vec3_Y_UP(arcPointOutside.x, arcPointOutside.y, levelElevation));
 
                         normals.push(vec3_Y_UP(-rotatedRadiusVector.x, -rotatedRadiusVector.y, -arcRadius).normalized());
                         normals.push(vec3_Y_UP(-rotatedRadiusVector.x, -rotatedRadiusVector.y, arcRadius).normalized());
@@ -246,7 +249,7 @@ Loader3D {
                         let rotatedWall = JSCad.modeling.transforms.rotateY(angle, straightWall);
 
                         // translate the wall to its correct position
-                        let positionedWall = JSCad.modeling.transforms.translate([(xStart + xEnd) / 2, wallHeight / 2, (yStart + yEnd) / 2], rotatedWall);
+                        let positionedWall = JSCad.modeling.transforms.translate([(xStart + xEnd) / 2, wallHeight / 2 + levelElevation, (yStart + yEnd) / 2], rotatedWall);
 
                         let wallWithoutWindow = positionedWall;
                         //console.log("wall: "+xStart+","+yStart+" -> "+xEnd+","+yEnd);
@@ -310,9 +313,17 @@ Loader3D {
                 }
             }
 
-            materials: [ PrincipledMaterial { roughness: 0.8; metalness: 0; baseColor: leftSideColor },
-                         PrincipledMaterial { roughness: 0.8; metalness: 0; baseColor: rightSideColor },
-                         PrincipledMaterial { roughness: 1; metalness: 0; baseColor: "white" } ]
+            materials: [
+                MaterialOverloadedTexture {
+                    roughness: 0.8; metalness: 0; baseColor: leftSideColor
+                    textureLookupSelector: "/wall[@id='"+wallId+"']/texture[@attribute='leftSideTexture']"
+                },
+                MaterialOverloadedTexture {
+                    roughness: 0.8; metalness: 0; baseColor: rightSideColor
+                    textureLookupSelector: "/wall[@id='"+wallId+"']/texture[@attribute='rightSideTexture']"
+                },
+                PrincipledMaterial { roughness: 1; metalness: 0; baseColor: "white" }
+            ]
         }
     }
 }

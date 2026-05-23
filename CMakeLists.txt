@@ -24,6 +24,15 @@ qt_add_resources(appsh3d_viewer_qml "assimpimporter_options"
           resources/default.mtl
 )
 
+qt_add_resources(appsh3d_viewer_qml "skymap"
+    #FILES resources/qwantani_sunrise_puresky_1k.hdr
+    FILES resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+    #FILES resources/OpenfootageNET_Paris_MenilmontonDAY_low.hdr
+    #FILES resources/little_paris_eiffel_tower_1k.hdr
+    #FILES resources/red_church_1k.hdr
+    #FILES resources/little_paris_eiffel_tower_2k.hdr
+)
+
 qt_add_qml_module(appsh3d_viewer_qml
     URI sh3d_viewer_qml
     VERSION 1.0
@@ -31,10 +40,13 @@ qt_add_qml_module(appsh3d_viewer_qml
     QML_FILES
         qml/Main.qml
         qml/SceneLoader.qml
+        qml/SceneViews.qml
         qml/views/WallDelegate.qml
+        qml/views/MaterialOverloadedTexture.qml
         qml/models/RoomModel.qml
         qml/models/HomeModel.qml
-        qml/models/CameraModel.qml qml/models/DoorModel.qml qml/models/FurnitureModel.qml qml/models/LightModel.qml qml/models/RoomModel.qml qml/models/WindowModel.qml
+        qml/models/LevelModel.qml
+        qml/models/CameraModel.qml qml/models/DoorModel.qml qml/models/FurnitureModel.qml qml/models/LightModel.qml qml/models/RoomModel.qml
         qml/models/WallModel.qml
         qml/views/FurnitureDelegate.qml
         qml/views/RoomDelegate.qml
@@ -55,15 +67,8 @@ qt_add_qml_module(appsh3d_viewer_qml
         qml/js/.qmllint.ini
 
 
-    #RESOURCES resources/lake_pier_1k.hdr
-    #RESOURCES resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr
-    #RESOURCES resources/OpenfootageNET_Paris_MenilmontonDAY_low.hdr
-    #RESOURCES resources/little_paris_eiffel_tower_1k.hdr
-    RESOURCES resources/little_paris_eiffel_tower_2k.hdr
-
     SOURCES src/Sh3dHomeModel.h src/Sh3dHomeModel.cpp
     SOURCES src/sh3druntimeloader.cpp src/sh3druntimeloader.h
-    QML_FILES
 )
 
 # Add include directories so target can find the QMLELEMENTS
