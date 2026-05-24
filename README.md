@@ -24,3 +24,14 @@ Known issues
 * Some doors/widows might fail to completely cut through the wall
 
 And probably plenty more!
+
+Screenshots
+-----------
+
+Keep in mind that this is realtime rendering, not a raytracing rendering.
+Also, lights aren't rendered in this example, it is just an ambiant light.
+
+Here is one example rendering:
+
+![House based on a factory by @margauxda7](./screenshots/House_based_on_a_factory_by_margauxda7.png)
+
