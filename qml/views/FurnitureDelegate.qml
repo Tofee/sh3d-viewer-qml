@@ -122,8 +122,10 @@ Node {
                    Qt.vector3d(1,1,1)
     }
 
+    property vector3d rotatedDimensions: sceneRotation.times(scale)
+
     // Apply furniture's rotation, scale and position
     eulerRotation: vec3_Y_UP(modelPitch, modelRoll, modelAngle).times(-180 / Math.PI)
     scale: vec3_Y_UP(modelWidth, modelDepth, modelHeight)
-    position: vec3_Y_UP(modelX, modelY, modelHeight/2 + modelElevation + levelElevation)
+    position: vec3_Y_UP(modelX, modelY, Math.abs(rotatedDimensions.y/2) + modelElevation + levelElevation)
 }
