@@ -9,6 +9,7 @@ import "../js/LightsManager.js" as LightManager
 Node {
     id: lightDelegate
     property alias furnitureSource: lightDelegateShape.furnitureSource
+    property string modelId: lightDelegateShape.objectName
     property alias modelAngle: lightDelegateShape.modelAngle
     property alias modelPitch: lightDelegateShape.modelPitch
     property alias modelRoll: lightDelegateShape.modelRoll
@@ -49,10 +50,10 @@ Node {
                 brightness: 5*lightDelegate.lightPower
 
                 // not possible to bake in the RuntimeLoader instances, so in the end it's veeery slow
-//                bakeMode: Light.BakeModeIndirect
+                bakeMode: Light.BakeModeIndirect
 
 //                use32BitShadowmap: true
-//                castsShadow: true
+                castsShadow: true
 //                shadowFactor: 100
 //                shadowMapQuality: DirectionalLight.ShadowMapQualityVeryHigh
 //                softShadowQuality: Light.PCF32

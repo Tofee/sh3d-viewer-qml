@@ -12,7 +12,7 @@ Item {
     id: root
 
     // performance reason
-    property bool useOnlyDirectionalLight: true || lightModel.count===0
+    property bool useOnlyDirectionalLight: false || lightModel.count===0
 
     HomeModel {
         id: homeModel
@@ -73,12 +73,21 @@ Item {
              //   materialOverride: DebugSettings.Normals
             }
             antialiasingMode: SceneEnvironment.MSAA
-            backgroundMode: SceneEnvironment.SkyBox
+            backgroundMode: SceneEnvironment.Color
+            /*
             lightProbe: Texture {
                 source: "qrc:///resources/kloofendal_48d_partly_cloudy_puresky_1k.hdr"
             }
+            */
             tonemapMode: SceneEnvironment.TonemapModeLinear
             clearColor: "#6060A0"
+
+            lightmapper: Lightmapper {
+                source: "file:///tmp/sh3d_lightmaps.bin"
+                // will attempt to load from :/lightmaps/lightmaps.bin at runtime
+                // and write a file to lightmaps/lightmaps.bin when baking.
+                samples: 16
+            }
           //  adjustmentBrightness: 2
         }
 
@@ -87,10 +96,12 @@ Item {
         }
 
         DirectionalLight {
-            color: "white"
-            brightness: 0.5
+            color: "#fdf6e4"
+            brightness: 1.0
             eulerRotation: Qt.vector3d(-80, -70, 0)
             shadowFactor: 10
+
+            bakeMode: Light.BakeModeIndirect
 
             use32BitShadowmap: false
             castsShadow: true
@@ -98,8 +109,6 @@ Item {
             csmNumSplits: 0
             lockShadowmapTexels: false
             softShadowQuality: Light.PCF32
-
-            visible: useOnlyDirectionalLight
         }
 
         WasdController {
@@ -132,5 +141,9 @@ Item {
             property LightModel lightModel: lightModel
             property CameraModel cameraModel: cameraModel
         }
+    }
+
+    DebugView {
+        source: mainView3D
     }
 }

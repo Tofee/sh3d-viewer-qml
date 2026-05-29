@@ -69,6 +69,7 @@ private:
     void calculateBounds();
     void loadSource();
     void updateModels();
+    void enableBakedLighting();
 
     QPointer<QQuick3DNode> m_root;
     QPointer<QQuick3DNode> m_imported;

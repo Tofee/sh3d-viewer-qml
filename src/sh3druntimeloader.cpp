@@ -221,6 +221,7 @@ void SH3DRuntimeLoader::loadSource()
         m_boundsDirty = true;
         m_instancingChanged = m_instancing != nullptr;
         updateModels();
+        enableBakedLighting();
         // Cleanup scene before deleting.
         scene.cleanup();
     } else {
@@ -242,6 +243,32 @@ void SH3DRuntimeLoader::updateModels()
         });
         m_instancingChanged = false;
     }
+}
+
+void SH3DRuntimeLoader::enableBakedLighting()
+{
+    unsigned int idx_model = 0;
+
+    // For each model, enable backed lighting
+    applyToModels(m_imported, [this, &idx_model](QQuick3DModel *model) {
+        if (!model->isUsedInBakedLighting()) {
+            QQuick3DBakedLightmap *newBackedLightmap = new QQuick3DBakedLightmap();
+            newBackedLightmap->setEnabled(true);
+            newBackedLightmap->setKey(objectName() + ":" + QString::number(idx_model));
+            model->setBakedLightmap(newBackedLightmap);
+            model->setUsedInBakedLighting(true);
+            connect(model, &QQuick3DModel::boundsChanged, [model] {
+                QQuick3DBounds3 modelBounds = model->bounds();
+                QVector3D dims = modelBounds.bounds.dimensions();
+
+                if (dims.x() * dims.y() * dims.z() <= 0) {
+                    // don't bake flat or lineic models
+                    model->setUsedInBakedLighting(false);
+                }
+            });
+            idx_model++;
+        }
+    });
 }
 
 SH3DRuntimeLoader::Status SH3DRuntimeLoader::status() const

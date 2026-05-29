@@ -64,6 +64,7 @@ Node {
         delegateModelAccess: DelegateModel.ReadOnly
         delegate: FurnitureDelegate {
             furnitureSource: "sh3d:/"+model.modelFile
+            modelId: model.id
 
             materialModel: MaterialModel {
                 queryId: model.id
@@ -91,6 +92,7 @@ Node {
         delegateModelAccess: DelegateModel.ReadOnly
         delegate: FurnitureDelegate {
             furnitureSource: "sh3d:/"+model.modelFile
+            modelId: model.id
 
             materialModel: MaterialModel {
                 queryId: model.id
@@ -119,6 +121,7 @@ Node {
         delegateModelAccess: DelegateModel.ReadOnly
         delegate: FurnitureDelegate {
             furnitureSource: "sh3d:/"+model.modelFile
+            modelId: model.id
 
             materialModel: MaterialModel {
                 queryId: model.id
@@ -161,6 +164,7 @@ Node {
         delegate: LightDelegate {
                 property url undefined_url
                 furnitureSource: model.catalogId==='eTeks#halogenLightSource' ? undefined_url : ("sh3d:/"+model.modelFile)
+                modelId: model.id
 
                 materialModel: MaterialModel {
                     queryId: model.id

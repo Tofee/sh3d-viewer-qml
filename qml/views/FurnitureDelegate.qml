@@ -11,6 +11,7 @@ import sh3d_viewer_qml
 Node {
     id: rootNode
     property url furnitureSource
+    property string modelId
     property real modelAngle
     property real modelPitch
     property real modelRoll
@@ -31,6 +32,8 @@ Node {
             SH3DRuntimeLoader {
                 id: furnitureLoader
                 source: rootNode.furnitureSource
+
+                objectName: modelId
 
                 property vector3d posCenter: bounds.minimum.plus(bounds.maximum).times(0.5)
                 property vector3d furnitureSize: bounds.maximum.minus(bounds.minimum)
